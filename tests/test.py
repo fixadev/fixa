@@ -1,4 +1,4 @@
-from vat import Test, Agent, Scenario
+from fixa import Test, Agent, Scenario
 
 test = Test()
 test.run()
