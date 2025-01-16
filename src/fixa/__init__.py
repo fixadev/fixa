@@ -1,5 +1,6 @@
 from .agent import Agent
-from .test import Test
+from .evaluation import Evaluation
 from .scenario import Scenario
+from .test import Test
 
-__all__ = ['Agent', 'Test', 'Scenario']
+__all__ = ['Agent', 'Evaluation', 'Scenario', 'Test']
