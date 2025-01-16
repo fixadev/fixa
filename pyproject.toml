@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vat-dev"
+version = "0.0.1"
+description = "A tool for testing and evaluating AI voice agents"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Unit",
+    "License :: OSI Approved :: BSD License",
+]
+license = { text = "BSD 2-Clause License" }
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+Homepage = "https://vat.dev"
+Repository = "https://github.com/fixadev/vat"
+Issues = "https://github.com/fixadev/vat/issues"

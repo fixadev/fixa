@@ -1,5 +1,4 @@
 from fixa import Test, Agent, Scenario
-from fixa.agents import Jessica
 
 jessica = Agent(
     prompt="you are a young woman named lily who says 'like' a lot",
