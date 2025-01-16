@@ -1,1 +1,33 @@
+# Python egg metadata
+*.egg-info/
+src/*.egg-info/
+src/vat.egg-info/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
 .venv/
+venv/
+env/
+ENV/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover

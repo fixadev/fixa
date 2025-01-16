@@ -17,7 +17,6 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
 ]
 license = { text = "BSD 2-Clause License" }
-license-files = ["LICEN[CS]E*"]
 
 [project.urls]
 Homepage = "https://vat.dev"
