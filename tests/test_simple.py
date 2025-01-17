@@ -1,8 +1,13 @@
 from fixa import Test, Agent, Scenario, Evaluation, TestRunner
+import ngrok
+import os
+from dotenv import load_dotenv
+import time
+
+load_dotenv(override=True)
 
 jessica = Agent(
     prompt="you are a young woman named lily who says 'like' a lot",
-    voice_id="jessica",
 )
 
 order_donut = Scenario(
@@ -17,11 +22,13 @@ order_donut = Scenario(
 tests = []
 test = Test(order_donut, jessica)
 
+port = 8765
+listener = ngrok.forward(port, authtoken=os.getenv("NGROK_AUTH_TOKEN"), domain="api.jpixa.ngrok.dev")
 test_runner = TestRunner(
-    port=8765,
-    ngrok_url="https://XXX.ngrok.dev",
-    twilio_phone_number="+16508859164",
+    port=port,
+    ngrok_url=listener.url(),
+    twilio_phone_number=os.getenv("TWILIO_PHONE_NUMBER") or "",
 )
 
 test_runner.add_test(test)
-test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number="+16508859164")
+test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")

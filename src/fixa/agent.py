@@ -1,5 +1,5 @@
 class Agent:
-    def __init__(self, *, prompt: str, voice_id: str):
+    def __init__(self, *, prompt: str, voice_id: str = "79a125e8-cd45-4c13-8a67-188112f4dd22"):
         """Initialize an Agent.
         
         Args:

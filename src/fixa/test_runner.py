@@ -59,13 +59,24 @@ class TestRunner:
         # TODO
 
         # self.server_process.terminate()
+        assert self.server_process.stderr is not None
+        while True:
+            line = self.server_process.stderr.readline()
+            print(line, end='')
+            if "Application startup complete" in line:
+                break
+            if self.server_process.poll() is not None:
+                break
+
+        print("Server exited")
 
     def _start_server(self):
         """
         Starts the server.
         """
+        server_path = os.path.join(os.path.dirname(__file__), "test_server.py")
         self.server_process = subprocess.Popen(
-            ["python", "server.py", "--port", str(self.port)],
+            ["python", server_path, "--port", str(self.port), "--ngrok_url", self.ngrok_url],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
@@ -81,7 +92,7 @@ class TestRunner:
 
         while True:
             line = self.server_process.stderr.readline()
-            # print(line, end='')
+            print(line, end='')
             if "Application startup complete" in line:
                 break
             if self.server_process.poll() is not None:
@@ -97,7 +108,7 @@ class TestRunner:
         print(f"\nRunning test: {test.scenario.name}")
         response = requests.post(f"{self.ngrok_url}/outbound", json={
             "to": phone_number,
-            "from_": self.twilio_phone_number,
+            "from": self.twilio_phone_number,
             "scenario_prompt": test.scenario.prompt,
             "agent_prompt": test.agent.prompt,
             "agent_voice_id": test.agent.voice_id,

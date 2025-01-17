@@ -19,9 +19,14 @@ from pipecat.transports.network.fastapi_websocket import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
+from loguru import logger
+import sys
 
 from fixa.scenario import Scenario
 from fixa.agent import Agent
+
+logger.remove(0)
+logger.add(sys.stderr, level="DEBUG")
 
 class Bot:
     def __init__(self, websocket_client, stream_sid, call_sid):
