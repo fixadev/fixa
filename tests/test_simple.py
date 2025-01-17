@@ -1,4 +1,5 @@
-from fixa import Test, Agent, Scenario, Evaluation, TestRunner
+from fixa import Test, Agent, Scenario, Evaluation, TestRunner, Evaluator
+from fixa.evaluators import LocalEvaluator, CloudEvaluator
 import ngrok
 import os
 from dotenv import load_dotenv
@@ -19,6 +20,9 @@ order_donut = Scenario(
     ],
 )
 
+evaluator = CloudEvaluator(api_key=os.getenv("FIXA_OBSERVE_API_KEY"))
+local_evaluator = LocalEvaluator()
+
 tests = []
 test = Test(order_donut, jessica)
 
@@ -28,6 +32,7 @@ test_runner = TestRunner(
     port=port,
     ngrok_url=listener.url(),
     twilio_phone_number=os.getenv("TWILIO_PHONE_NUMBER") or "",
+    evaluator=evaluator,
 )
 
 test_runner.add_test(test)
