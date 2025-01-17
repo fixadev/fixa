@@ -6,7 +6,8 @@ class Scenario:
         """Initialize a Scenario.
         
         Args:
-            system_prompt (str): The system prompt for the scenario
+            name (str): The name of the scenario
+            prompt (str): The system prompt for the scenario
             evaluations (List[Evaluation], optional): List of evaluations for this scenario
         """
         self.name = name

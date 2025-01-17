@@ -21,6 +21,7 @@ from pipecat.transports.network.fastapi_websocket import (
 )
 
 from fixa.scenario import Scenario
+from fixa.agent import Agent
 
 class Bot:
     def __init__(self, websocket_client, stream_sid, call_sid):
@@ -51,7 +52,7 @@ class Bot:
 
         await self.task.queue_frames([EndFrame()])
 
-    async def run(self, scenario: Scenario):
+    async def run(self, agent: Agent, scenario: Scenario):
         self.transport = FastAPIWebsocketTransport(
             websocket=self.websocket_client,
             params=FastAPIWebsocketParams(
@@ -80,13 +81,17 @@ class Bot:
         stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY") or "")
         tts = CartesiaTTSService(
             api_key=os.getenv("CARTESIA_API_KEY") or "",
-            voice_id="79a125e8-cd45-4c13-8a67-188112f4dd22",  # British Lady
+            voice_id=agent.voice_id,
         )
 
         self.messages: List[ChatCompletionMessageParam] = [
             {
                 "role": "system",
-                "content": "You are a helpful LLM in an audio call. Your goal is to demonstrate your capabilities in a succinct way. Your output will be converted to audio so don't include special characters in your answers. Respond to what the user said in a creative and helpful way.",
+                "content": agent.prompt,
+            },
+            {
+                "role": "system",
+                "content": scenario.prompt,
             },
             {
                 "role": "system",
@@ -117,6 +122,6 @@ class Bot:
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(self.task) 
 
-async def run_bot(scenario: Scenario, websocket_client, stream_sid, call_sid):
+async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid):
     bot = Bot(websocket_client, stream_sid, call_sid)
-    await bot.run(scenario)
+    await bot.run(agent, scenario)

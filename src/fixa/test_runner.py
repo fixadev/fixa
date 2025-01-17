@@ -87,13 +87,6 @@ class TestRunner:
             if self.server_process.poll() is not None:
                 raise Exception("Server failed to start")
 
-    def _get_stream_twiml(self):
-        """
-        Returns the TwiML for the websocket stream.
-        """
-        ws_url = self.ngrok_url.replace('https://', '')
-        return f"<Response><Connect><Stream url='wss://{ws_url}/ws'></Stream></Connect><Pause length='10'/></Response>"
-
     def _run_outbound_test(self, test: Test, phone_number: str):
         """
         Runs an outbound test.
@@ -102,11 +95,14 @@ class TestRunner:
             phone_number: The phone number to call.
         """
         print(f"\nRunning test: {test.scenario.name}")
-        self.twilio_client.calls.create(
-            to=phone_number,
-            from_=self.twilio_phone_number,
-            twiml=self._get_stream_twiml(),
-        )
+        response = requests.post(f"{self.ngrok_url}/outbound", json={
+            "to": phone_number,
+            "from_": self.twilio_phone_number,
+            "scenario_prompt": test.scenario.prompt,
+            "agent_prompt": test.agent.prompt,
+            "agent_voice_id": test.agent.voice_id,
+        })
+        print(response.json())
 
     def _run_inbound_test(self, test: Test, phone_number: str):
         """
