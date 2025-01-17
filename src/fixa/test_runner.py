@@ -5,6 +5,7 @@ from fixa.test import Test
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
+from fixa.evaluators import LocalEvaluator, CloudEvaluator
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
@@ -13,7 +14,7 @@ class TestRunner:
     INBOUND = "inbound"
     OUTBOUND = "outbound"
 
-    def __init__(self, port: int, ngrok_url: str, twilio_phone_number: str):
+    def __init__(self, port: int, ngrok_url: str, twilio_phone_number: str, evaluator: LocalEvaluator | CloudEvaluator | None = None):
         """
         Args:
             port: The port to run the server on.
