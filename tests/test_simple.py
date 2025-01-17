@@ -8,6 +8,7 @@ load_dotenv(override=True)
 
 jessica = Agent(
     prompt="you are a young woman named lily who says 'like' a lot",
+    voice_id="b7d50908-b17c-442d-ad8d-810c63997ed9"
 )
 
 order_donut = Scenario(

@@ -76,8 +76,9 @@ async def websocket_endpoint(websocket: WebSocket):
         return
         
     scenario, agent = pair
-    await run_bot(agent, scenario, websocket, stream_sid, call_sid)
-    
+    messages = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
+    print(messages)
+
     # Clean up
     del active_pairs[call_sid]
 

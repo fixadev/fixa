@@ -127,6 +127,8 @@ class Bot:
         runner = PipelineRunner(handle_sigint=False)
         await runner.run(self.task) 
 
+        return self.messages
+
 async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid):
     bot = Bot(websocket_client, stream_sid, call_sid)
-    await bot.run(agent, scenario)
+    return await bot.run(agent, scenario)
