@@ -31,3 +31,6 @@ htmlcov/
 .cache
 coverage.xml
 *.cover
+
+# Local files
+.env
