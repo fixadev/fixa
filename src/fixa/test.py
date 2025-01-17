@@ -11,8 +11,3 @@ class Test:
         """
         self.scenario = scenario
         self.agent = agent
-    
-    def run(self):
-        """Run the test scenario with the agent."""
-        # Implementation to be added
-        pass

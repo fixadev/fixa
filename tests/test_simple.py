@@ -1,4 +1,4 @@
-from fixa import Test, Agent, Scenario, Evaluation
+from fixa import Test, Agent, Scenario, Evaluation, TestRunner
 
 jessica = Agent(
     prompt="you are a young woman named lily who says 'like' a lot",
@@ -16,4 +16,12 @@ order_donut = Scenario(
 
 tests = []
 test = Test(order_donut, jessica)
-test.run()
+
+test_runner = TestRunner(
+    port=8765,
+    ngrok_url="https://XXX.ngrok.dev",
+    twilio_phone_number="+16508859164",
+)
+
+test_runner.add_test(test)
+test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number="+16508859164")
