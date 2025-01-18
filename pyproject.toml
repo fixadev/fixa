@@ -26,6 +26,7 @@ dependencies = [
     "twilio",
     "ngrok",
     "requests",
+    "python-multipart",
 ]
 
 [project.urls]

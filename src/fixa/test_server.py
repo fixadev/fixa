@@ -4,7 +4,7 @@ import uvicorn
 from fixa.bot import run_bot
 from fixa.scenario import Scenario
 from fixa.agent import Agent
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Form
 from fastapi.middleware.cors import CORSMiddleware
 from twilio.rest import Client
 import os 
@@ -24,6 +24,7 @@ active_pairs: Dict[str, Tuple[Scenario, Agent]] = {}
 class CallStatus(TypedDict):
     status: Literal["in_progress", "completed", "error"]
     messages: Optional[List[ChatCompletionMessageParam]]
+    recording_url: Optional[str]
 
 # Mapping from call_sid to status
 call_status: Dict[str, CallStatus] = {}
@@ -51,6 +52,10 @@ class OutboundCallRequest(BaseModel):
     agent_prompt: str
     agent_voice_id: str = "79a125e8-cd45-4c13-8a67-188112f4dd22"  # Default to British Lady
 
+class RecordingRequest(BaseModel):
+    RecordingUrl: str
+    CallSid: str
+
 @app.get("/status")
 async def status():
     return call_status
@@ -58,6 +63,9 @@ async def status():
 @app.post("/outbound")
 async def outbound_call(request: OutboundCallRequest):
     call = twilio_client.calls.create(
+        record=True,
+        recording_channels="dual",
+        recording_status_callback=f"{args.ngrok_url}/recording",
         to=request.to,
         from_=request.from_,
         twiml=get_stream_twiml(),
@@ -77,6 +85,7 @@ async def outbound_call(request: OutboundCallRequest):
     call_status[call_sid] = {
         "status": "in_progress",
         "messages": None,
+        "recording_url": None
     }
     logger.info(f"OUTBOUND CALL {call_sid} to {request.to}")
     return {"success": True, "call_id": call_sid}
@@ -103,16 +112,30 @@ async def websocket_endpoint(websocket: WebSocket):
         call_status[call_sid] = {
             "status": "completed",
             "messages": messages,
+            "recording_url": None
         }
     except Exception as e:
         logger.error(f"Error running bot: {e}")
         call_status[call_sid] = {
             "status": "error",
             "messages": None,
+            "recording_url": None
         }
     finally:
         logger.info("============================================= BOT FINISHED =============================================")
         del active_pairs[call_sid]
+
+@app.post("/recording")
+async def recording(RecordingSid: str = Form(), RecordingUrl: str = Form(), CallSid: str = Form()):
+    logger.info(f"Recording SID: {RecordingSid}, Recording URL: {RecordingUrl}, Call SID: {CallSid}")
+    if CallSid in call_status:
+        # Format the recording URL with authentication credentials
+        account_sid = os.getenv("TWILIO_ACCOUNT_SID")
+        auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+        base_url = RecordingUrl.replace("https://", "")
+        authenticated_url = f"https://{account_sid}:{auth_token}@{base_url}"
+        call_status[CallSid]["recording_url"] = authenticated_url
+    return {"success": True}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
