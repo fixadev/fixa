@@ -1,4 +1,4 @@
-import requests
+import asyncio
 import uuid
 from typing import List
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
@@ -27,7 +27,7 @@ class CloudEvaluator(BaseEvaluator):
                 f"https://api.fixa.dev/v1/upload-call",
                 json={
                     "callId": str(uuid.uuid4()),
-                    "scenario": scenario,
+                    "scenario": scenario.to_dict(),
                     "transcript": transcript,
                     "stereoRecordingUrl": stereo_recording_url,
                 },
@@ -35,6 +35,25 @@ class CloudEvaluator(BaseEvaluator):
                     "Authorization": f"Bearer {self.api_key}"
                 }
             ) as response:
-                await response.json()
+                data = await response.json()
+                call_id = data["callId"]
+            
+            max_retries = 10
+            retries = 0
+            while retries < max_retries:
+                async with session.get(
+                    f"https://api.fixa.dev/v1/call/{call_id}",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}"
+                    }
+                ) as response:
+                    if response.status == 200:
+                        results = await response.json()
+                        evaluation_results = results["call"]["evaluationsResults"]
+                        return [EvaluationResult(name=r["evaluationTemplate"]["name"], passed=r["sucess"], reason=r["details"]) for r in evaluation_results]
+                    
+                    # Wait a bit before polling again
+                    await asyncio.sleep(1)
+                    retries += 1
 
-        return []
+        raise Exception("Failed to get call results")

@@ -1,5 +1,5 @@
 from fixa import Test, Agent, Scenario, Evaluation, TestRunner
-from fixa.evaluators import LocalEvaluator
+from fixa.evaluators import LocalEvaluator, CloudEvaluator
 import ngrok
 import os
 from dotenv import load_dotenv
@@ -30,7 +30,7 @@ async def test_simple():
         port=port,
         ngrok_url=listener.url(),
         twilio_phone_number=os.getenv("TWILIO_PHONE_NUMBER") or "",
-        evaluator=LocalEvaluator(),
+        evaluator=CloudEvaluator(api_key=os.getenv("FIXA_API_KEY")),
     )
 
     test = Test(scenario=order_donut, agent=jessica)
