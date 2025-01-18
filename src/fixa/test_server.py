@@ -76,7 +76,7 @@ async def outbound_call(request: OutboundCallRequest):
         
     # Create scenario and agent
     scenario = Scenario(name="", prompt=request.scenario_prompt)
-    agent = Agent(prompt=request.agent_prompt, voice_id=request.agent_voice_id)
+    agent = Agent(name="", prompt=request.agent_prompt, voice_id=request.agent_voice_id)
     
     # Store them for this call
     active_pairs[call_sid] = (scenario, agent)

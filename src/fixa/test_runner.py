@@ -5,6 +5,9 @@ import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 import asyncio
+import sys
+from datetime import datetime
+import aiohttp
 
 from fixa.test import Test
 from fixa.evaluators import BaseEvaluator, EvaluationResult
@@ -56,24 +59,55 @@ class TestRunner:
         """
         self._start_server()
 
-        for test in self.tests:
-            if type == self.INBOUND:
-                self._run_inbound_test(test, phone_number)
-            elif type == self.OUTBOUND:
-                self._run_outbound_test(test, phone_number)
-            else:
-                raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
+        # Initialize test status display
+        print("\n🔄 Running Tests:\n")
+        for i, test in enumerate(self.tests, 1):
+            print(f"{i}. {test.scenario.name} ⏳ Pending...")
+
+        async with asyncio.TaskGroup() as tg:
+            for i, test in enumerate(self.tests, 1):
+                if type == self.INBOUND:
+                    tg.create_task(self._run_inbound_test(test, phone_number))
+                elif type == self.OUTBOUND:
+                    tg.create_task(self._run_outbound_test(test, phone_number))
+                    # Move cursor up and update status
+                    sys.stdout.write(f"\033[{len(self.tests) - i + 1}A")
+                    print(f"{i}. {test.scenario.name} 📞 Calling...", " " * 20)
+                    sys.stdout.write(f"\033[{len(self.tests) - i + 1}B")
+                else:
+                    raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
 
         evaluated_calls = set()
-        assert self.server_process.stderr is not None
 
         async with asyncio.TaskGroup() as tg:
             while len(evaluated_calls) < len(self.tests):
-                response = requests.get(f"{self.ngrok_url}/status")
-                self._status = response.json()
-                print("STATUS", self._status, flush=True)
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f"{self.ngrok_url}/status") as response:
+                        self._status = await response.json()
 
-                # Check each call status and evaluate if complete
+                # Update status for each test
+                for call_id, status in self._status.items():
+                    if call_id in self._call_id_to_test:
+                        test = self._call_id_to_test[call_id]
+                        test_index = self.tests.index(test)
+                        status_symbol = "⏳"
+                        status_text = "In progress"
+                        
+                        if status["status"] == "completed":
+                            if call_id in self._evaluation_results:
+                                status_symbol = "✅"
+                                status_text = "Complete"
+                            else:
+                                status_symbol = "📝"
+                                status_text = "Evaluating"
+                        
+                        # Move cursor up to the test's line
+                        sys.stdout.write(f"\033[{len(self.tests) - test_index}A")
+                        print(f"{test_index + 1}. {test.scenario.name} ({test.agent.name}) {status_symbol} {status_text}", " " * 20)
+                        sys.stdout.write(f"\033[{len(self.tests) - test_index}B")
+                        sys.stdout.flush()
+
+                # Check for completed calls to evaluate
                 for call_id, status in self._status.items():
                     if (
                         call_id not in evaluated_calls
@@ -88,10 +122,20 @@ class TestRunner:
 
         # All tests are complete, stop the server
         self.server_process.terminate()
-        print("All tests completed, server stopped")
-        print(self._call_id_to_test)
-        print(self._status)
-        print(self._evaluation_results)
+        print("\n✨ All tests completed!\n")
+        
+        # Display final results
+        print("📊 Test Results:")
+        print("=" * 50)
+        for call_id, results in self._evaluation_results.items():
+            test = self._call_id_to_test[call_id]
+            recording_url = self._status[call_id]["stereo_recording_url"]
+            print(f"\n🎯 {test.scenario.name} ({test.agent.name})")
+            print(f"🔊 Recording URL: {recording_url}")
+            for result in results:
+                status = "✅" if result.passed else "❌"
+                print(f"-- {status} {result.name}: {result.reason}")
+        print("\n" + "=" * 50)
 
     async def _evaluate_call(self, call_id: str) -> Optional[List[EvaluationResult]]:
         """
@@ -123,8 +167,28 @@ class TestRunner:
             stderr=subprocess.PIPE,
             universal_newlines=True,
         )
+        
+        
         self._wait_for_server()
         print("Server started...", flush=True)
+
+        # Start debug monitoring in background
+        # asyncio.create_task(self._monitor_server_debug())
+
+    async def _monitor_server_debug(self):
+        """
+        Continuously monitors and prints server stderr output for debugging.
+        """
+        assert self.server_process.stderr is not None
+        while True:
+            line = self.server_process.stderr.readline()
+            if line:
+                # print(f"🔍 [Server]: {line}", end='', flush=True)
+                if "ERROR:" in line:
+                    print(f"❌ [Server]: {line}", end='', flush=True)
+            if self.server_process.poll() is not None:
+                break
+            await asyncio.sleep(0.1)
 
     def _wait_for_server(self):
         """
@@ -140,7 +204,7 @@ class TestRunner:
             if self.server_process.poll() is not None:
                 raise Exception("Server failed to start")
 
-    def _run_outbound_test(self, test: Test, phone_number: str):
+    async def _run_outbound_test(self, test: Test, phone_number: str):
         """
         Runs an outbound test.
         Args:
@@ -148,15 +212,25 @@ class TestRunner:
             phone_number: The phone number to call.
         """
         print(f"\nRunning test: {test.scenario.name}")
-        response = requests.post(f"{self.ngrok_url}/outbound", json={
-            "to": phone_number,
-            "from": self.twilio_phone_number,
-            "scenario_prompt": test.scenario.prompt,
-            "agent_prompt": test.agent.prompt,
-            "agent_voice_id": test.agent.voice_id,
-        })
-        print(response.json())
-        self._call_id_to_test[response.json()["call_id"]] = test
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.post(f"{self.ngrok_url}/outbound", json={
+                    "to": phone_number,
+                    "from": self.twilio_phone_number,
+                    "scenario_prompt": test.scenario.prompt,
+                    "agent_prompt": test.agent.prompt,
+                    "agent_voice_id": test.agent.voice_id,
+                }) as response:
+                    if response.status != 200:
+                        error_text = await response.text()
+                        raise Exception(f"Server error ({response.status}): {error_text}")
+                    
+                    response_json = await response.json()
+                    print(response_json)
+                    self._call_id_to_test[response_json["call_id"]] = test
+            except aiohttp.ClientError as e:
+                print(f"❌ Failed to make outbound call: {str(e)}")
+                raise
 
     def _run_inbound_test(self, test: Test, phone_number: str):
         """
