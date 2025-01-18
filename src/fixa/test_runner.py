@@ -1,5 +1,4 @@
 import subprocess
-import time
 import requests
 from fixa.test import Test
 import os
@@ -30,6 +29,7 @@ class TestRunner:
         self.port = port
         self.ngrok_url = ngrok_url
         self.twilio_phone_number = twilio_phone_number
+        self.evaluator = evaluator
         self.tests: list[Test] = []
         self.twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 
@@ -59,7 +59,6 @@ class TestRunner:
         # Wait for tests to finish
         # TODO
 
-        # self.server_process.terminate()
         assert self.server_process.stderr is not None
         while True:
             line = self.server_process.stderr.readline()
@@ -83,7 +82,7 @@ class TestRunner:
             universal_newlines=True,
         )
         self._wait_for_server()
-        print("Server started...")
+        print("Server started...", flush=True)
 
     def _wait_for_server(self):
         """

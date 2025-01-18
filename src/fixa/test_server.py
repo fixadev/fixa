@@ -1,5 +1,5 @@
 import json
-
+import logging
 import uvicorn
 from fixa.bot import run_bot
 from fixa.scenario import Scenario
@@ -11,6 +11,10 @@ import os
 from pydantic import BaseModel, Field
 import argparse
 from typing import Dict, Tuple
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Store scenarios and agents by call_sid
 active_pairs: Dict[str, Tuple[Scenario, Agent]] = {}
@@ -55,7 +59,7 @@ async def outbound_call(request: OutboundCallRequest):
     
     # Store them for this call
     active_pairs[call_sid] = (scenario, agent)
-    print(f"OUTBOUND CALL {call_sid} to {request.to}")
+    logger.info(f"OUTBOUND CALL {call_sid} to {request.to}")
     return {"success": True, "call_id": call_sid}
 
 @app.websocket("/ws")
@@ -64,20 +68,20 @@ async def websocket_endpoint(websocket: WebSocket):
     start_data = websocket.iter_text()
     await start_data.__anext__()
     call_data = json.loads(await start_data.__anext__())
-    print(call_data, flush=True)
     stream_sid = call_data["start"]["streamSid"]
     call_sid = call_data["start"]["callSid"]
-    print(f"WebSocket connection accepted for call {call_sid}")
+    logger.info(f"WebSocket connection accepted for call {call_sid}")
     
     # Get the scenario and agent for this call
     pair = active_pairs.get(call_sid)
     if not pair:
-        print(f"No scenario/agent pair found for call {call_sid}")
+        logger.error(f"No scenario/agent pair found for call {call_sid}")
         return
         
     scenario, agent = pair
     messages = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
-    print(messages)
+    logger.info("============================================= BOT FINISHED =============================================")
+    logger.info(messages)
 
     # Clean up
     del active_pairs[call_sid]

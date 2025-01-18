@@ -3,9 +3,11 @@ from typing import List
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 from fixa.evaluators.evaluator import Scenario, EvaluationResults
+from dotenv import load_dotenv
 
+load_dotenv(override=True)
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
 
 class LocalEvaluator():
     def __init__(self):
