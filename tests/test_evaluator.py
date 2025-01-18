@@ -1,10 +1,11 @@
 from openai.types.chat import ChatCompletionMessageParam
 from typing import List
+import asyncio
+from dotenv import load_dotenv
 
 from fixa.evaluation import Evaluation
 from fixa.evaluators.local import LocalEvaluator
 from fixa.scenario import Scenario
-from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
@@ -34,5 +35,4 @@ async def test_evaluator():
     print(evaluation_results)
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(test_evaluator())

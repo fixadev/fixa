@@ -39,6 +39,7 @@ class TestRunner:
         self._twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
         self._status: Dict[str, CallStatus] = {}
         self._call_id_to_test: Dict[str, Test] = {}
+        self._evaluation_results: Dict[str, List[EvaluationResult]] = {}
 
     def add_test(self, test: Test):
         """
@@ -63,23 +64,34 @@ class TestRunner:
             else:
                 raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
 
-        # Wait for tests to finish
-        # TODO
-
+        evaluated_calls = set()
         assert self.server_process.stderr is not None
-        while True:
-            response = requests.get(f"{self.ngrok_url}/status")
-            self._status = response.json()
-            print("STATUS", self._status, flush=True)
-            await asyncio.sleep(1)
-            # line = self.server_process.stderr.readline()
-            # print(line, end='')
-            # if "Application startup complete" in line:
-            #     break
-            # if self.server_process.poll() is not None:
-            #     break
 
-        print("Server exited")
+        async with asyncio.TaskGroup() as tg:
+            while len(evaluated_calls) < len(self.tests):
+                response = requests.get(f"{self.ngrok_url}/status")
+                self._status = response.json()
+                print("STATUS", self._status, flush=True)
+
+                # Check each call status and evaluate if complete
+                for call_id, status in self._status.items():
+                    if (
+                        call_id not in evaluated_calls
+                        and status["status"] == "completed"
+                        and status["transcript"] is not None
+                        and status["stereo_recording_url"] is not None
+                    ):
+                        evaluated_calls.add(call_id)
+                        tg.create_task(self._evaluate_call(call_id))
+
+                await asyncio.sleep(1)
+
+        # All tests are complete, stop the server
+        self.server_process.terminate()
+        print("All tests completed, server stopped")
+        print(self._call_id_to_test)
+        print(self._status)
+        print(self._evaluation_results)
 
     async def _evaluate_call(self, call_id: str) -> Optional[List[EvaluationResult]]:
         """
@@ -95,7 +107,9 @@ class TestRunner:
         ):
             return
 
-        evaluation_results = self.evaluator.evaluate(test.scenario, call_status["transcript"], call_status["stereo_recording_url"])
+        evaluation_results = await self.evaluator.evaluate(test.scenario, call_status["transcript"], call_status["stereo_recording_url"])
+        if evaluation_results is not None:
+            self._evaluation_results[call_id] = evaluation_results
         return evaluation_results
 
     def _start_server(self):

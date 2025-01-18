@@ -22,9 +22,8 @@ async def test_simple():
         ],
     )
 
-
     port = 8765
-    listener = ngrok.forward(port, authtoken=os.getenv("NGROK_AUTH_TOKEN"), domain="api.jpixa.ngrok.dev")
+    listener = await ngrok.forward(port, authtoken=os.getenv("NGROK_AUTH_TOKEN"), domain="api.jpixa.ngrok.dev") # type: ignore
 
     test_runner = TestRunner(
         port=port,
