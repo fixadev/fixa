@@ -2,16 +2,17 @@ import requests
 import uuid
 from typing import List
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
-from fixa.evaluators.evaluator import Scenario
+from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
+from fixa.scenario import Scenario
 
 
-class CloudEvaluator():
+class CloudEvaluator(BaseEvaluator):
     def __init__(self, api_key: str):
         self.api_key = api_key
         if not api_key:
             raise ValueError("fixa-observe API key required for cloud evaluator")
     
-    def evaluate_call(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam | ChatCompletionToolParam], stereo_recording_url: str) -> bool:
+    def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> List[EvaluationResult]:
         """Evaluate a call using fixa-observe.
         Args:
             scenario (Scenario): Scenario to evaluate
@@ -32,3 +33,5 @@ class CloudEvaluator():
                 "Authorization": f"Bearer {self.api_key}"
             }
         )
+
+        return []

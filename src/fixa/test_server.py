@@ -10,7 +10,7 @@ from twilio.rest import Client
 import os 
 from pydantic import BaseModel, Field
 import argparse
-from typing import Dict, Tuple, Any, List, Literal, Optional
+from typing import Dict, Tuple, List, Literal, Optional
 from typing_extensions import TypedDict
 from openai.types.chat import ChatCompletionMessageParam
 
@@ -23,8 +23,8 @@ active_pairs: Dict[str, Tuple[Scenario, Agent]] = {}
 
 class CallStatus(TypedDict):
     status: Literal["in_progress", "completed", "error"]
-    messages: Optional[List[ChatCompletionMessageParam]]
-    recording_url: Optional[str]
+    transcript: Optional[List[ChatCompletionMessageParam]]
+    stereo_recording_url: Optional[str]
 
 # Mapping from call_sid to status
 call_status: Dict[str, CallStatus] = {}
@@ -84,8 +84,8 @@ async def outbound_call(request: OutboundCallRequest):
     # Set the status to in_progress
     call_status[call_sid] = {
         "status": "in_progress",
-        "messages": None,
-        "recording_url": None
+        "transcript": None,
+        "stereo_recording_url": None
     }
     logger.info(f"OUTBOUND CALL {call_sid} to {request.to}")
     return {"success": True, "call_id": call_sid}
@@ -108,18 +108,18 @@ async def websocket_endpoint(websocket: WebSocket):
         
     scenario, agent = pair
     try:
-        messages = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
+        transcript = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
         call_status[call_sid] = {
             "status": "completed",
-            "messages": messages,
-            "recording_url": None
+            "transcript": transcript,
+            "stereo_recording_url": None
         }
     except Exception as e:
         logger.error(f"Error running bot: {e}")
         call_status[call_sid] = {
             "status": "error",
-            "messages": None,
-            "recording_url": None
+            "transcript": None,
+            "stereo_recording_url": None
         }
     finally:
         logger.info("============================================= BOT FINISHED =============================================")
@@ -134,7 +134,7 @@ async def recording(RecordingSid: str = Form(), RecordingUrl: str = Form(), Call
         auth_token = os.getenv("TWILIO_AUTH_TOKEN")
         base_url = RecordingUrl.replace("https://", "")
         authenticated_url = f"https://{account_sid}:{auth_token}@{base_url}"
-        call_status[CallSid]["recording_url"] = authenticated_url
+        call_status[CallSid]["stereo_recording_url"] = authenticated_url
     return {"success": True}
 
 if __name__ == "__main__":

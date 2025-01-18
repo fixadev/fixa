@@ -3,7 +3,7 @@ from fixa import Test, Agent, Scenario, Evaluation, TestRunner
 import ngrok
 import os
 from dotenv import load_dotenv
-import time
+import asyncio
 
 load_dotenv(override=True)
 
@@ -37,4 +37,4 @@ test_runner = TestRunner(
 )
 
 test_runner.add_test(test)
-test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")
+asyncio.run(test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or ""))
