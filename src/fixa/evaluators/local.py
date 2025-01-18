@@ -2,23 +2,28 @@ import os
 from typing import List, Optional
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
+from pydantic import BaseModel
 from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
 from fixa.scenario import Scenario
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
+
+class EvaluationResults(BaseModel):
+    results: List[EvaluationResult]
 
 class LocalEvaluator(BaseEvaluator):
-    def __init__(self):
-        pass
+    def __init__(self, model: str = "gpt-4o"):
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
+        self.model = model
     
-    def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam | ChatCompletionToolParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
+    def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
         """Evaluate a call locally.
         Args:
             scenario (Scenario): Scenario to evaluate
-            transcript (List[ChatCompletionMessageParam | ChatCompletionToolParam]): Transcript of the call
+            transcript (List[ChatCompletionMessageParam]): Transcript of the call
+            stereo_recording_url (str): URL of the stereo recording of the call
         Returns:
             Optional[List[EvaluationResult]]: List of evaluation results, or None if the evaluation failed
         """
@@ -27,12 +32,15 @@ class LocalEvaluator(BaseEvaluator):
             {"role": "user", "content": f"Transcript:\n{str(transcript)}"}
         ]
         
-        response = openai_client.beta.chat.completions.parse(
-            model="gpt-4o",
+        response = self.client.beta.chat.completions.parse(
+            model=self.model,
             messages=messages,
             temperature=0,
             max_tokens=100,
-            response_format=List[EvaluationResult],
+            response_format=EvaluationResults,
         )
 
-        return response.choices[0].message.parsed
+        parsed = response.choices[0].message.parsed
+        if parsed is None:
+            return None
+        return parsed.results
