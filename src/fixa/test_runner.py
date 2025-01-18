@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 from fixa.evaluators import LocalEvaluator, CloudEvaluator
+import time
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
@@ -61,12 +62,15 @@ class TestRunner:
 
         assert self.server_process.stderr is not None
         while True:
-            line = self.server_process.stderr.readline()
-            print(line, end='')
-            if "Application startup complete" in line:
-                break
-            if self.server_process.poll() is not None:
-                break
+            response = requests.get(f"{self.ngrok_url}/status")
+            print("STATUS", response.json(), flush=True)
+            time.sleep(1)
+            # line = self.server_process.stderr.readline()
+            # print(line, end='')
+            # if "Application startup complete" in line:
+            #     break
+            # if self.server_process.poll() is not None:
+            #     break
 
         print("Server exited")
 

@@ -10,7 +10,9 @@ from twilio.rest import Client
 import os 
 from pydantic import BaseModel, Field
 import argparse
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any, List, Literal, Optional
+from typing_extensions import TypedDict
+from openai.types.chat import ChatCompletionMessageParam
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -18,6 +20,13 @@ logger = logging.getLogger(__name__)
 
 # Store scenarios and agents by call_sid
 active_pairs: Dict[str, Tuple[Scenario, Agent]] = {}
+
+class CallStatus(TypedDict):
+    status: Literal["in_progress", "completed", "error"]
+    messages: Optional[List[ChatCompletionMessageParam]]
+
+# Mapping from call_sid to status
+call_status: Dict[str, CallStatus] = {}
 
 app = FastAPI()
 app.add_middleware(
@@ -42,6 +51,10 @@ class OutboundCallRequest(BaseModel):
     agent_prompt: str
     agent_voice_id: str = "79a125e8-cd45-4c13-8a67-188112f4dd22"  # Default to British Lady
 
+@app.get("/status")
+async def status():
+    return call_status
+
 @app.post("/outbound")
 async def outbound_call(request: OutboundCallRequest):
     call = twilio_client.calls.create(
@@ -59,6 +72,12 @@ async def outbound_call(request: OutboundCallRequest):
     
     # Store them for this call
     active_pairs[call_sid] = (scenario, agent)
+
+    # Set the status to in_progress
+    call_status[call_sid] = {
+        "status": "in_progress",
+        "messages": None,
+    }
     logger.info(f"OUTBOUND CALL {call_sid} to {request.to}")
     return {"success": True, "call_id": call_sid}
 
@@ -79,13 +98,21 @@ async def websocket_endpoint(websocket: WebSocket):
         return
         
     scenario, agent = pair
-    messages = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
-    logger.info("============================================= BOT FINISHED =============================================")
-    logger.info(messages)
-
-    # Clean up
-    del active_pairs[call_sid]
-
+    try:
+        messages = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
+        call_status[call_sid] = {
+            "status": "completed",
+            "messages": messages,
+        }
+    except Exception as e:
+        logger.error(f"Error running bot: {e}")
+        call_status[call_sid] = {
+            "status": "error",
+            "messages": None,
+        }
+    finally:
+        logger.info("============================================= BOT FINISHED =============================================")
+        del active_pairs[call_sid]
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
