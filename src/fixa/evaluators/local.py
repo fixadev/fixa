@@ -1,7 +1,7 @@
 import os
 from typing import List, Optional
-from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
 from fixa.scenario import Scenario
@@ -15,10 +15,10 @@ class EvaluationResults(BaseModel):
 
 class LocalEvaluator(BaseEvaluator):
     def __init__(self, model: str = "gpt-4o"):
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
+        self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
         self.model = model
     
-    def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
+    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
         """Evaluate a call locally.
         Args:
             scenario (Scenario): Scenario to evaluate
@@ -32,7 +32,7 @@ class LocalEvaluator(BaseEvaluator):
             {"role": "user", "content": f"Transcript:\n{str(transcript)}"}
         ]
         
-        response = self.client.beta.chat.completions.parse(
+        response = await self.client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
             temperature=0,

@@ -18,5 +18,5 @@ class EvaluationResult(BaseModel):
 
 class BaseEvaluator(ABC):
     @abstractmethod
-    def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
+    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
         raise NotImplementedError
