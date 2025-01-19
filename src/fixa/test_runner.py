@@ -137,9 +137,9 @@ class TestRunner:
                 else:
                     all_completed_iterations = 0
 
-                # Break if all calls are completed for more than 10 iterations
+                # Break if all calls are completed for more than 60 seconds (60 iterations)
                 # This catches the case where transcript or stereo_recording_url is never set on a call
-                if all_completed_iterations > 10:
+                if all_completed_iterations > 60:
                     break
 
                 await asyncio.sleep(1)
