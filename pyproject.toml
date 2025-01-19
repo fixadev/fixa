@@ -30,6 +30,6 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://vat.dev"
-Repository = "https://github.com/fixadev/vat"
-Issues = "https://github.com/fixadev/vat/issues"
+Homepage = "https://fixa.dev"
+Repository = "https://github.com/fixadev/fixa"
+Issues = "https://github.com/fixadev/fixa/issues"
