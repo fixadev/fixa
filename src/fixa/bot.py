@@ -1,5 +1,6 @@
 import os
 from typing import List
+import asyncio
 
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
 from twilio.rest import Client
@@ -131,5 +132,9 @@ class Bot:
 
 async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid):
     bot = Bot(websocket_client, stream_sid, call_sid)
-    transcript = await bot.run(agent, scenario)
-    return transcript
+    try:
+        transcript = await bot.run(agent, scenario)
+        return transcript
+    except asyncio.CancelledError:
+        print("Bot run cancelled")
+        return None

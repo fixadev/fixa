@@ -81,7 +81,7 @@ class TestRunner:
         for i, test in enumerate(self.tests, 1):
             print(f"{i}. {test.scenario.name} ⏳ Pending...")
 
-        async with asyncio.TaskGroup() as tg:
+        async with asyncio.TaskGroup() as tg, aiohttp.ClientSession() as session:
             for i, test in enumerate(self.tests, 1):
                 if type == self.INBOUND:
                     tg.create_task(self._run_inbound_test(test, phone_number))
@@ -95,11 +95,11 @@ class TestRunner:
                     raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
 
             completed_calls = set()
+            all_completed_iterations = 0 # keeps track of how many iterations have been done since all calls were completed
 
             while len(completed_calls) < len(self.tests):
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(f"{self.ngrok_url}/status") as response:
-                        self._status = await response.json()
+                async with session.get(f"{self.ngrok_url}/status") as response:
+                    self._status = await response.json()
 
                 # Print status with simplified transcript info and recording URL
                 for call_id, status in self._status.items():
@@ -125,7 +125,25 @@ class TestRunner:
                             completed_calls.add(call_id)
                             tg.create_task(self._evaluate_call(call_id))
 
+                # Check if all calls are completed
+                all_completed = True
+                for status in self._status.values():
+                    if status["status"] == "in_progress":
+                        all_completed = False
+                        break
+                if all_completed:
+                    all_completed_iterations += 1
+                    print(f"All calls are completed for {all_completed_iterations} iterations")
+                else:
+                    all_completed_iterations = 0
+
+                # Break if all calls are completed for more than 10 iterations
+                # This catches the case where transcript or stereo_recording_url is never set on a call
+                if all_completed_iterations > 10:
+                    break
+
                 await asyncio.sleep(1)
+
 
         # All tests are complete, stop the server
         await self._stop_server()
@@ -217,14 +235,20 @@ class TestRunner:
 
     async def _stop_server(self):
         """
-        Stops the server gracefully.
+        Stops the server gracefully, with a forced exit if needed.
         """
         if hasattr(self, 'server'):
             self.server.should_exit = True
             try:
-                await self.server_task
-            except asyncio.CancelledError:
-                pass
+                # Wait for graceful shutdown with timeout
+                await asyncio.wait_for(self.server_task, timeout=5.0)
+            except asyncio.TimeoutError:
+                print("Server graceful shutdown timed out, forcing exit...")
+                self.server.force_exit = True
+                try:
+                    await self.server_task
+                except asyncio.CancelledError:
+                    pass
 
     async def _run_outbound_test(self, test: Test, phone_number: str):
         """
