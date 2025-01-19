@@ -35,10 +35,10 @@ async def test_simple():
     )
 
     test = Test(scenario=order_donut, agent=jessica)
-    for _ in range(4):
+    for _ in range(10):
         test_runner.add_test(test)
     test_results = await test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")
-    print(test_results)
+    # print(test_results)
 
 if __name__ == "__main__":
     asyncio.run(test_simple())

@@ -131,4 +131,5 @@ class Bot:
 
 async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid):
     bot = Bot(websocket_client, stream_sid, call_sid)
-    return await bot.run(agent, scenario)
+    transcript = await bot.run(agent, scenario)
+    return transcript

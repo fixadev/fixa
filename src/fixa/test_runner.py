@@ -23,14 +23,15 @@ class TestResult():
     """
     Result of a test.
     """
-    def __init__(self, test: Test, evaluation_results: List[EvaluationResult], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str):
+    def __init__(self, test: Test, evaluation_results: List[EvaluationResult], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str, error: str | None = None):
         self.test = test
         self.evaluation_results = evaluation_results
         self.transcript = transcript
         self.stereo_recording_url = stereo_recording_url
+        self.error = error
 
     def __repr__(self):
-        return f"TestResult(test={self.test}, evaluation_results={self.evaluation_results}, transcript={self.transcript}, stereo_recording_url='{self.stereo_recording_url}')"
+        return f"TestResult(test={self.test}, evaluation_results={self.evaluation_results}, transcript={self.transcript}, stereo_recording_url='{self.stereo_recording_url}', error={self.error})"
 
 class TestRunner:
     INBOUND = "inbound"
@@ -113,11 +114,15 @@ class TestRunner:
                     if (
                         call_id not in completed_calls
                         and status["status"] != "in_progress"
-                        and status["transcript"] is not None
-                        and status["stereo_recording_url"] is not None
                     ):
-                        completed_calls.add(call_id)
-                        if status["status"] != "error":
+                        if status["status"] == "error":
+                            completed_calls.add(call_id)
+                        elif (
+                            status["status"] == "completed"
+                            and status["transcript"] is not None
+                            and status["stereo_recording_url"] is not None
+                        ):
+                            completed_calls.add(call_id)
                             tg.create_task(self._evaluate_call(call_id))
 
                 await asyncio.sleep(1)
@@ -130,27 +135,44 @@ class TestRunner:
         # Display final results
         print("📊 Test Results:")
         print("=" * 50)
-        for call_id, results in self._evaluation_results.items():
+        for call_id, status in self._status.items():
             test = self._call_id_to_test[call_id]
-            recording_url = self._status[call_id]["stereo_recording_url"]
-            print(f"\n🎯 {test.scenario.name} ({test.agent.name})")
-            print(f"🔊 Recording URL: {recording_url}")
-            for result in results:
-                status = "✅" if result.passed else "❌"
-                print(f"-- {status} {result.name}: {result.reason}")
+            if status["status"] == "error":
+                print(f"\n🎯 {test.scenario.name} ({test.agent.name})")
+                print(f"❌ Error: {status['error']}")
+            else:
+                recording_url = status["stereo_recording_url"]
+                print(f"\n🎯 {test.scenario.name} ({test.agent.name})")
+                print(f"🔊 Recording URL: {recording_url}")
+                if call_id in self._evaluation_results:
+                    for result in self._evaluation_results[call_id]:
+                        status = "✅" if result.passed else "❌"
+                        print(f"-- {status} {result.name}: {result.reason}")
         print("\n" + "=" * 50)
 
         test_results = []
-        for call_id, results in self._evaluation_results.items():
+        for call_id, status in self._status.items():
             test = self._call_id_to_test[call_id]
-            test_results.append(
-                TestResult(
-                    test=test, 
-                    evaluation_results=results,
-                    transcript=self._status[call_id]["transcript"] or [], 
-                    stereo_recording_url=self._status[call_id]["stereo_recording_url"] or ""
+            if status["status"] == "error":
+                test_results.append(
+                    TestResult(
+                        test=test,
+                        evaluation_results=[],
+                        transcript=[],
+                        stereo_recording_url="",
+                        error=status["error"]
+                    )
                 )
-            )
+            else:
+                test_results.append(
+                    TestResult(
+                        test=test, 
+                        evaluation_results=self._evaluation_results.get(call_id, []),
+                        transcript=status["transcript"] or [], 
+                        stereo_recording_url=status["stereo_recording_url"] or "",
+                        error=None
+                    )
+                )
         return test_results
 
     async def _evaluate_call(self, call_id: str) -> Optional[List[EvaluationResult]]:

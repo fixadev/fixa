@@ -134,7 +134,9 @@ async def websocket_endpoint(websocket: WebSocket):
         
     scenario, agent = pair
     try:
+        # print(f"RUNNING BOT {call_sid}")
         transcript = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
+        # print(f"BOT COMPLETED {call_sid}")
         call_status[call_sid] = {
             "status": "completed",
             "transcript": transcript,
@@ -142,14 +144,16 @@ async def websocket_endpoint(websocket: WebSocket):
             "error": None
         }
     except Exception as e:
+        # print(f"BOT FAILED {call_sid}", e)
         call_status[call_sid] = {
             "status": "error",
             "transcript": None,
             "stereo_recording_url": None,
             "error": str(e)
         }
-
-    del active_pairs[call_sid]
+    finally:
+        # print(f"DELETING PAIR {call_sid}")
+        del active_pairs[call_sid]
 
 @app.post("/recording")
 async def recording(RecordingSid: str = Form(), RecordingUrl: str = Form(), CallSid: str = Form()):
@@ -161,6 +165,10 @@ async def recording(RecordingSid: str = Form(), RecordingUrl: str = Form(), Call
         base_url = RecordingUrl.replace("https://", "")
         authenticated_url = f"https://{account_sid}:{auth_token}@{base_url}"
         call_status[CallSid]["stereo_recording_url"] = authenticated_url
+        if call_status[CallSid]["status"] != "completed":
+            # If recording is received before call is completed, mark as error
+            call_status[CallSid]["status"] = "error"
+            call_status[CallSid]["error"] = "agent failed to start"
     return {"success": True}
 
 if __name__ == "__main__":
