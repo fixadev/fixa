@@ -8,3 +8,9 @@ class Evaluation:
         """
         self.name = name
         self.prompt = prompt
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "prompt": self.prompt
+        }

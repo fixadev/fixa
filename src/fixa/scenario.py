@@ -13,3 +13,10 @@ class Scenario:
         self.name = name
         self.prompt = prompt
         self.evaluations = evaluations
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "prompt": self.prompt,
+            "evaluations": [e.to_dict() for e in self.evaluations]
+        }

@@ -42,7 +42,7 @@ class CloudEvaluator(BaseEvaluator):
             retries = 0
             while retries < max_retries:
                 async with session.get(
-                    f"https://api.fixa.dev/v1/call/{call_id}",
+                    f"https://api.fixa.dev/v1/calls/{call_id}",
                     headers={
                         "Authorization": f"Bearer {self.api_key}"
                     }
