@@ -50,8 +50,8 @@ class Bot:
         assert self.task is not None
 
         # Kick off the conversation.
-        self.messages.append({"role": "system", "content": "your first response should be an empty string. nothing else."})
-        await self.task.queue_frames([self.context_aggregator.user().get_context_frame()])
+        # self.messages.append({"role": "system", "content": "your first response should be an empty string. nothing else."})
+        # await self.task.queue_frames([self.context_aggregator.user().get_context_frame()])
 
     async def on_client_disconnected(self, transport, client):
         assert self.task is not None
@@ -136,5 +136,5 @@ async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid
         transcript = await bot.run(agent, scenario)
         return transcript
     except asyncio.CancelledError:
-        print("Bot run cancelled")
+        # print("Bot run cancelled")
         return None

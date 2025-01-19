@@ -134,9 +134,7 @@ async def websocket_endpoint(websocket: WebSocket):
         
     scenario, agent = pair
     try:
-        # print(f"RUNNING BOT {call_sid}")
         transcript = await run_bot(agent, scenario, websocket, stream_sid, call_sid)
-        # print(f"BOT COMPLETED {call_sid}")
         call_status[call_sid] = {
             "status": "completed",
             "transcript": transcript,
@@ -144,7 +142,7 @@ async def websocket_endpoint(websocket: WebSocket):
             "error": None
         }
     except Exception as e:
-        # print(f"BOT FAILED {call_sid}", e)
+        logger.error(f"Bot failed for call {call_sid}: {str(e)}")
         call_status[call_sid] = {
             "status": "error",
             "transcript": None,
@@ -152,7 +150,6 @@ async def websocket_endpoint(websocket: WebSocket):
             "error": str(e)
         }
     finally:
-        # print(f"DELETING PAIR {call_sid}")
         del active_pairs[call_sid]
 
 @app.post("/recording")
