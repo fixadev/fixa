@@ -9,11 +9,12 @@ import asyncio
 import sys
 from datetime import datetime
 import aiohttp
+import uvicorn
 from openai.types.chat import ChatCompletionMessageParam
 
 from fixa import Scenario, Test
 from fixa.evaluators import BaseEvaluator, EvaluationResult
-from fixa.test_server import CallStatus
+from fixa.test_server import CallStatus, app, set_args, set_twilio_client
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
@@ -72,7 +73,7 @@ class TestRunner:
             type: The type of test to run. Can be TestRunner.INBOUND or TestRunner.OUTBOUND.
             phone_number: The phone number to call (for outbound tests).
         """
-        self._start_server()
+        await self._start_server()
 
         # Initialize test status display
         print("\n🔄 Running Tests:\n")
@@ -92,50 +93,38 @@ class TestRunner:
                 else:
                     raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
 
-            evaluated_calls = set()
+            completed_calls = set()
 
-            while len(evaluated_calls) < len(self.tests):
+            while len(completed_calls) < len(self.tests):
                 async with aiohttp.ClientSession() as session:
                     async with session.get(f"{self.ngrok_url}/status") as response:
                         self._status = await response.json()
 
-                # Update status for each test
+                # Print status with simplified transcript info and recording URL
                 for call_id, status in self._status.items():
-                    if call_id in self._call_id_to_test:
-                        test = self._call_id_to_test[call_id]
-                        test_index = self.tests.index(test)
-                        status_symbol = "⏳"
-                        status_text = "In progress"
-                        
-                        if status["status"] == "completed":
-                            if call_id in self._evaluation_results:
-                                status_symbol = "✅"
-                                status_text = "Complete"
-                            else:
-                                status_symbol = "📝"
-                                status_text = "Evaluating"
-                        
-                        # Move cursor up to the test's line
-                        sys.stdout.write(f"\033[{len(self.tests) - test_index}A")
-                        print(f"{test_index + 1}. {test.scenario.name} ({test.agent.name}) {status_symbol} {status_text}", " " * 20)
-                        sys.stdout.write(f"\033[{len(self.tests) - test_index}B")
-                        sys.stdout.flush()
+                    transcript_status = "exists" if status["transcript"] is not None else "None"
+                    recording_url = status["stereo_recording_url"] or "None"
+                    status_str = status["status"]
+                    error = status["error"] or "None"
+                    print(f"Call {call_id}: status={status_str}, transcript={transcript_status}, recording={recording_url}, error={error}")
 
                 # Check for completed calls to evaluate
                 for call_id, status in self._status.items():
                     if (
-                        call_id not in evaluated_calls
-                        and status["status"] == "completed"
+                        call_id not in completed_calls
+                        and status["status"] != "in_progress"
                         and status["transcript"] is not None
                         and status["stereo_recording_url"] is not None
                     ):
-                        evaluated_calls.add(call_id)
-                        tg.create_task(self._evaluate_call(call_id))
+                        completed_calls.add(call_id)
+                        if status["status"] != "error":
+                            tg.create_task(self._evaluate_call(call_id))
 
                 await asyncio.sleep(1)
 
         # All tests are complete, stop the server
-        self.server_process.terminate()
+        await self._stop_server()
+        
         print("\n✨ All tests completed!\n")
         
         # Display final results
@@ -183,53 +172,37 @@ class TestRunner:
             self._evaluation_results[call_id] = evaluation_results
         return evaluation_results
 
-    def _start_server(self):
+    async def _start_server(self):
         """
         Starts the server.
         """
-        server_path = os.path.join(os.path.dirname(__file__), "test_server.py")
-        self.server_process = subprocess.Popen(
-            ["python", server_path, "--port", str(self.port), "--ngrok_url", self.ngrok_url],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
+        # Initialize the server's global variables
+        set_args(self.port, self.ngrok_url)
+        set_twilio_client(self._twilio_client)
         
+        # Configure uvicorn with shutdown timeout
+        config = uvicorn.Config(app, host="0.0.0.0", port=self.port, log_level="info", timeout_keep_alive=5)
+        self.server = uvicorn.Server(config)
         
-        self._wait_for_server()
+        # Run the server in a background task
+        self.server_task = asyncio.create_task(self.server.serve())
+        
+        # Wait for server to start
+        while not self.server.started:
+            await asyncio.sleep(0.1)
+        
         print("Server started...", flush=True)
 
-        # Start debug monitoring in background
-        # asyncio.create_task(self._monitor_server_debug())
-
-    async def _monitor_server_debug(self):
+    async def _stop_server(self):
         """
-        Continuously monitors and prints server stderr output for debugging.
+        Stops the server gracefully.
         """
-        assert self.server_process.stderr is not None
-        while True:
-            line = self.server_process.stderr.readline()
-            if line:
-                # print(f"🔍 [Server]: {line}", end='', flush=True)
-                if "ERROR:" in line:
-                    print(f"❌ [Server]: {line}", end='', flush=True)
-            if self.server_process.poll() is not None:
-                break
-            await asyncio.sleep(0.1)
-
-    def _wait_for_server(self):
-        """
-        Waits for the server to start.
-        """
-        assert self.server_process.stderr is not None
-
-        while True:
-            line = self.server_process.stderr.readline()
-            print(line, end='')
-            if "Application startup complete" in line:
-                break
-            if self.server_process.poll() is not None:
-                raise Exception("Server failed to start")
+        if hasattr(self, 'server'):
+            self.server.should_exit = True
+            try:
+                await self.server_task
+            except asyncio.CancelledError:
+                pass
 
     async def _run_outbound_test(self, test: Test, phone_number: str):
         """
@@ -238,7 +211,7 @@ class TestRunner:
             test: The test to run.
             phone_number: The phone number to call.
         """
-        print(f"\nRunning test: {test.scenario.name}")
+        # print(f"\nRunning test: {test.scenario.name}")
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.post(f"{self.ngrok_url}/outbound", json={
@@ -253,7 +226,6 @@ class TestRunner:
                         raise Exception(f"Server error ({response.status}): {error_text}")
                     
                     response_json = await response.json()
-                    print(response_json)
                     self._call_id_to_test[response_json["call_id"]] = test
             except aiohttp.ClientError as e:
                 print(f"❌ Failed to make outbound call: {str(e)}")
