@@ -10,3 +10,6 @@ class Agent:
         self.name = name
         self.prompt = prompt
         self.voice_id = voice_id 
+
+    def __repr__(self):
+        return f"Agent(name='{self.name}', prompt='{self.prompt}', voice_id='{self.voice_id}')"

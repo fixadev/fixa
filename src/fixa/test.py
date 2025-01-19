@@ -11,3 +11,6 @@ class Test:
         """
         self.scenario = scenario
         self.agent = agent
+
+    def __repr__(self):
+        return f"Test(scenario={self.scenario}, agent={self.agent})"

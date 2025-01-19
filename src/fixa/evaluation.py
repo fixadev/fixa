@@ -14,3 +14,6 @@ class Evaluation:
             "name": self.name,
             "prompt": self.prompt
         }
+
+    def __repr__(self):
+        return f"Evaluation(name='{self.name}', prompt='{self.prompt}')"

@@ -30,12 +30,14 @@ async def test_simple():
         port=port,
         ngrok_url=listener.url(),
         twilio_phone_number=os.getenv("TWILIO_PHONE_NUMBER") or "",
-        evaluator=CloudEvaluator(api_key=os.getenv("FIXA_API_KEY")),
+        # evaluator=CloudEvaluator(api_key=os.getenv("FIXA_API_KEY") or ""),
+        evaluator=LocalEvaluator(),
     )
 
     test = Test(scenario=order_donut, agent=jessica)
     test_runner.add_test(test)
-    await test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")
+    test_results = await test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")
+    print(test_results)
 
 if __name__ == "__main__":
     asyncio.run(test_simple())

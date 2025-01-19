@@ -27,6 +27,7 @@ class CloudEvaluator(BaseEvaluator):
                 f"https://api.fixa.dev/v1/upload-call",
                 json={
                     "callId": str(uuid.uuid4()),
+                    "agentId": "test",
                     "scenario": scenario.to_dict(),
                     "transcript": transcript,
                     "stereoRecordingUrl": stereo_recording_url,
@@ -36,8 +37,10 @@ class CloudEvaluator(BaseEvaluator):
                 }
             ) as response:
                 data = await response.json()
+                if not data["success"]:
+                    raise Exception(f"Failed to upload call: {data}")
                 call_id = data["callId"]
-            
+
             max_retries = 10
             retries = 0
             while retries < max_retries:

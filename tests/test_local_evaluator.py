@@ -4,7 +4,7 @@ import asyncio
 from dotenv import load_dotenv
 
 from fixa.evaluation import Evaluation
-from fixa.evaluators.local import LocalEvaluator
+from fixa.evaluators import LocalEvaluator
 from fixa.scenario import Scenario
 
 load_dotenv(override=True)

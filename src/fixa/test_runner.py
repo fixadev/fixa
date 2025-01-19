@@ -1,5 +1,6 @@
 import subprocess
 from typing import Dict, List, Optional
+from pydantic import BaseModel
 import requests
 import os
 from dotenv import load_dotenv
@@ -8,13 +9,27 @@ import asyncio
 import sys
 from datetime import datetime
 import aiohttp
+from openai.types.chat import ChatCompletionMessageParam
 
-from fixa.test import Test
+from fixa import Scenario, Test
 from fixa.evaluators import BaseEvaluator, EvaluationResult
 from fixa.test_server import CallStatus
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
+
+class TestResult():
+    """
+    Result of a test.
+    """
+    def __init__(self, test: Test, evaluation_results: List[EvaluationResult], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str):
+        self.test = test
+        self.evaluation_results = evaluation_results
+        self.transcript = transcript
+        self.stereo_recording_url = stereo_recording_url
+
+    def __repr__(self):
+        return f"TestResult(test={self.test}, evaluation_results={self.evaluation_results}, transcript={self.transcript}, stereo_recording_url='{self.stereo_recording_url}')"
 
 class TestRunner:
     INBOUND = "inbound"
@@ -50,7 +65,7 @@ class TestRunner:
         """
         self.tests.append(test)
 
-    async def run_tests(self, type: str, phone_number: str):
+    async def run_tests(self, type: str, phone_number: str) -> List[TestResult]:
         """
         Runs all the tests that were added to the test runner.
         Args:
@@ -77,9 +92,8 @@ class TestRunner:
                 else:
                     raise ValueError(f"Invalid test type: {type}. Must be TestRunner.INBOUND or TestRunner.OUTBOUND.")
 
-        evaluated_calls = set()
+            evaluated_calls = set()
 
-        async with asyncio.TaskGroup() as tg:
             while len(evaluated_calls) < len(self.tests):
                 async with aiohttp.ClientSession() as session:
                     async with session.get(f"{self.ngrok_url}/status") as response:
@@ -136,6 +150,19 @@ class TestRunner:
                 status = "✅" if result.passed else "❌"
                 print(f"-- {status} {result.name}: {result.reason}")
         print("\n" + "=" * 50)
+
+        test_results = []
+        for call_id, results in self._evaluation_results.items():
+            test = self._call_id_to_test[call_id]
+            test_results.append(
+                TestResult(
+                    test=test, 
+                    evaluation_results=results,
+                    transcript=self._status[call_id]["transcript"] or [], 
+                    stereo_recording_url=self._status[call_id]["stereo_recording_url"] or ""
+                )
+            )
+        return test_results
 
     async def _evaluate_call(self, call_id: str) -> Optional[List[EvaluationResult]]:
         """

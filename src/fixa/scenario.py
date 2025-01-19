@@ -20,3 +20,6 @@ class Scenario:
             "prompt": self.prompt,
             "evaluations": [e.to_dict() for e in self.evaluations]
         }
+
+    def __repr__(self):
+        return f"Scenario(name='{self.name}', prompt='{self.prompt}', evaluations={self.evaluations})"
