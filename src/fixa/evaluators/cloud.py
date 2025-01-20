@@ -5,7 +5,10 @@ from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolPara
 from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
 from fixa.scenario import Scenario
 import aiohttp
+import json
 
+# api_url = "https://api.fixa.dev/v1"
+api_url = "http://localhost:3003/v1"
 
 class CloudEvaluator(BaseEvaluator):
     def __init__(self, api_key: str):
@@ -24,7 +27,7 @@ class CloudEvaluator(BaseEvaluator):
         """
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                f"https://api.fixa.dev/v1/upload-call",
+                f"{api_url}/upload-call",
                 json={
                     "callId": str(uuid.uuid4()),
                     "agentId": "test",
@@ -43,20 +46,21 @@ class CloudEvaluator(BaseEvaluator):
 
             max_retries = 10
             retries = 0
+            await asyncio.sleep(5)
             while retries < max_retries:
                 async with session.get(
-                    f"https://api.fixa.dev/v1/calls/{call_id}",
+                    f"{api_url}/calls/{call_id}",
                     headers={
                         "Authorization": f"Bearer {self.api_key}"
                     }
                 ) as response:
                     if response.status == 200:
                         results = await response.json()
-                        evaluation_results = results["call"]["evaluationsResults"]
-                        return [EvaluationResult(name=r["evaluationTemplate"]["name"], passed=r["sucess"], reason=r["details"]) for r in evaluation_results]
+                        evaluation_results = results["call"]["evaluationResults"]
+                        return [EvaluationResult(name=r["evaluation"]["evaluationTemplate"]["name"], passed=r["success"], reason=r["details"]) for r in evaluation_results]
                     
                     # Wait a bit before polling again
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(2)
                     retries += 1
 
         raise Exception("Failed to get call results")
