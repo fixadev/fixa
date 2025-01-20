@@ -1,4 +1,4 @@
-# fixa
+[![Fixa Logo](/.github/assets/logo.png)](https://fixa.dev)
 
 <h3 align="center">
   <a href="https://docs.fixa.dev">📘 docs</a>
