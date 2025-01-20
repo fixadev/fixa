@@ -11,7 +11,15 @@ fixa is a package for testing and evaluating AI voice agents.
 
 it uses a voice agent to call your voice agent with an llm as a judge.
 
-under the hood, this package uses [pipecat](https://github.com/pipecat-ai/pipecat) for the agent, Cartesia for TTS, Deepgram for transcription, OpenAI for the evaluator, and Twilio to initiate calls (new integrations coming soon).
+under the hood, this package uses
+
+- [Pipecat](https://github.com/pipecat-ai/pipecat) for the agent
+- Cartesia for TTS
+- Deepgram for transcription
+- OpenAI for the evaluator
+- Twilio to initiate calls
+
+(new integrations coming soon)
 
 # quick start
 
