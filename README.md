@@ -1,6 +1,6 @@
-<picture>
+<div align="center">
 <img alt="fixa logo" src="./.github/assets/logo.png"  width="full">
-</picture>
+</div>
 
 <h3 align="center">
   <a href="https://docs.fixa.dev">📘 docs</a>
