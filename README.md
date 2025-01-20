@@ -11,7 +11,7 @@
 
 fixa is a package for testing and evaluating AI voice agents.
 
-it uses a voice agent to call your voice agent with an llm as a judge.
+it uses a voice agent to call your voice agent with an LLM as a judge.
 
 under the hood, this package uses
 
