@@ -23,7 +23,7 @@ under the hood, this package uses
 
 # quick start
 
-with pip:
+installation:
 
 ```bash
 pip install fixa-dev
@@ -74,7 +74,7 @@ async def main():
     test_runner.add_test(test)
 
     # run the tests!
-    result = await test_runner.run_tests(
+    test_results = await test_runner.run_tests(
         type=TestRunner.OUTBOUND,
         phone_number="+15554443333", # the phone number to call
     )
@@ -117,7 +117,7 @@ for questions setting anything up, [join our discord](https://discord.gg/rT9cYkf
 
 # how it works
 
-## define agents and scenarios
+**1. define agents and scenarios**
 
 agents are the voice agents that will call your voice agent. give each agent a prompt which determines its characteristics, like speaking patterns or personality.
 
@@ -142,7 +142,7 @@ scenario = Scenario(
 )
 ```
 
-## define tests
+**2. define tests**
 
 a test is an association between the scenario to run and which agent to use.
 
@@ -150,7 +150,7 @@ a test is an association between the scenario to run and which agent to use.
 test = Test(scenario=scenario, agent=agent)
 ```
 
-## create a test runner
+**3. create a test runner**
 
 a test runner is used to actually execute the tests.
 
@@ -162,7 +162,7 @@ test_runner = TestRunner(
     evaluator=LocalEvaluator(),
 )
 test_runner.add_test(test)
-await test_runner.run_tests(
+test_results = await test_runner.run_tests(
     type=TestRunner.OUTBOUND,
     phone_number="+15554443333", # the phone number to call
 )
@@ -170,7 +170,7 @@ await test_runner.run_tests(
 
 when tests are run, all the test calls are made simultaneously to the phone number provided, with the voice agent executing the prompt instructions specified in the scenario.
 
-## get results
+**4. get results**
 
 after a call finishes, the evaluations defined as part of the scenario are run on the transcript, and the results are printed to the terminal.
 
@@ -180,6 +180,8 @@ after a call finishes, the evaluations defined as part of the scenario are run o
 -- ✅ order_success: The order was successfully placed and confirmed by the user and the assistant.
 -- ❌ price_confirmed: The price of the order was not mentioned or confirmed during the conversation.
 ```
+
+more information including transcript, etc. is available in the `test_results` object that is returned by the `run_tests()` function.
 
 # visualize the results
 
