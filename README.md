@@ -117,7 +117,7 @@ for questions setting anything up, [join our discord](https://discord.gg/rT9cYkf
 
 # how it works
 
-**1. define agents and scenarios**
+### 1. define agents and scenarios
 
 agents are the voice agents that will call your voice agent. give each agent a prompt which determines its characteristics, like speaking patterns or personality.
 
@@ -142,7 +142,7 @@ scenario = Scenario(
 )
 ```
 
-**2. define tests**
+### 2. define tests
 
 a test is an association between the scenario to run and which agent to use.
 
@@ -150,7 +150,7 @@ a test is an association between the scenario to run and which agent to use.
 test = Test(scenario=scenario, agent=agent)
 ```
 
-**3. create a test runner**
+### 3. create a test runner
 
 a test runner is used to actually execute the tests.
 
@@ -170,7 +170,7 @@ test_results = await test_runner.run_tests(
 
 when tests are run, all the test calls are made simultaneously to the phone number provided, with the voice agent executing the prompt instructions specified in the scenario.
 
-**4. get results**
+### 4. get results
 
 after a call finishes, the evaluations defined as part of the scenario are run on the transcript, and the results are printed to the terminal.
 
