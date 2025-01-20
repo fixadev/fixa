@@ -1,20 +1,19 @@
-# Contributing to VAT
+# Contributing to fixa
 
-We welcome contributions to the VAT (Voice Agent Testing) framework! Your help makes this project better. Here's how to get started:
+We welcome contributions to the fixa framework! Your help makes this project better. Here's how to get started:
 
 ## Setting Up Your Development Environment
 
 1. **Fork the Repository**
 
-   - Visit the VAT repository on GitHub
    - Click the "Fork" button in the top right
    - This creates your own copy of the repository
 
 2. **Clone Your Fork**
 
    ```bash
-   git clone https://github.com/your-username/vat
-   cd vat
+   git clone https://github.com/your-username/fixa
+   cd fixa
    ```
 
 3. **Set Up Virtual Environment**
@@ -84,4 +83,4 @@ If you have questions or need help with the contribution process:
 - Open an issue for general questions
 - Tag maintainers in your PR for specific questions about your contribution
 
-Thank you for contributing to VAT!
+Thank you for contributing to fixa!
