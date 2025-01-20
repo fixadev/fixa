@@ -13,7 +13,7 @@ fixa is a package for testing and evaluating AI voice agents.
 
 it uses a voice agent to call your voice agent with an LLM as a judge.
 
-under the hood, this package uses
+under the hood, this package uses:
 
 - [Pipecat](https://github.com/pipecat-ai/pipecat) for the agent
 - Cartesia for TTS

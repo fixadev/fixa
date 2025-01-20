@@ -1,0 +1,3 @@
+fixa-dev
+python-dotenv
+ngrok
