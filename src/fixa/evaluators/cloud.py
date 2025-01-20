@@ -7,8 +7,7 @@ from fixa.scenario import Scenario
 import aiohttp
 import json
 
-# api_url = "https://api.fixa.dev/v1"
-api_url = "http://localhost:3003/v1"
+api_url = "https://api.fixa.dev/v1"
 
 class CloudEvaluator(BaseEvaluator):
     def __init__(self, api_key: str):
