@@ -1,13 +1,10 @@
+<h1>
 <div align="center">
-<img alt="fixa logo" src="./.github/assets/logo.png"  width="full">
+  <img alt="fixa logo" width="300px" height="auto" src="https://raw.githubusercontent.com/fixadev/fixa/main/.github/assets/logo.png">
 </div>
+</h1>
 
-<h3 align="center">
-  <a href="https://docs.fixa.dev">📘 docs</a>
-  | <a href="https://discord.gg/rT9cYkfybZ">🎮 discord</a>
-</h3>
-
-# overview
+[![PyPI](https://img.shields.io/pypi/v/fixa-dev)](https://pypi.org/project/fixa-dev) [![Docs](https://img.shields.io/badge/documentation-white)](https://docs.fixa.dev) [![discord](https://img.shields.io/badge/join-discord-blue)](https://discord.gg/rT9cYkfybZ)
 
 fixa is a python package for testing and evaluating AI voice agents.
 
@@ -23,11 +20,11 @@ under the hood, this package uses:
 
 (other integrations coming soon)
 
-# demo
+## demo
 
 [![demo video](http://markdown-videos-api.jorgenkh.no/youtube/LAW1wW6SjTo)](https://www.youtube.com/watch?v=LAW1wW6SjTo)
 
-# quick start
+## quick start
 
 installation:
 
@@ -124,7 +121,7 @@ for more info, check out our [docs](https://docs.fixa.dev)
 
 for questions setting anything up, [join our discord](https://discord.gg/rT9cYkfybZ)
 
-# how it works
+## how it works
 
 ### 1. define agents and scenarios
 
@@ -192,7 +189,7 @@ after a call finishes, the evaluations defined as part of the scenario are run o
 
 more information including transcript, etc. is available in the `test_results` object that is returned by the `run_tests()` function.
 
-# visualize the results
+## visualize the results
 
 if you would like to visualize the results in a UI rather than in code, use the `CloudEvaluator`, which uploads the call to fixa observe. [sign up here](https://fixa.dev)
 
