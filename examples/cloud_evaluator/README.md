@@ -1,4 +1,4 @@
-# single test
+# cloud evaluator
 
 this example shows how to run a simple test with the `CloudEvaluator`
 
@@ -20,11 +20,11 @@ the call analysis UI looks like this:
 
 ## get started
 
-1. first, create an account at https://fixa.dev
+1. create an account at https://fixa.dev
 
-2. then, get your fixa API key from the API keys tab
+2. get your fixa API key from the API keys tab
 
-![fixa observe](../../.github/assets/api-keys.png)
+<img src="../../.github/assets/api-keys.png" alt="api-keys" width="400"/>
 
 3. run the following code
 
