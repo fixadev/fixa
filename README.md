@@ -26,13 +26,28 @@ under the hood, this package uses:
 
 ## quick start
 
-installation:
+### installation:
 
 ```bash
 pip install fixa-dev
 ```
 
-run a test:
+### set up your environment variables in a `.env` file
+
+```bash
+OPENAI_API_KEY=
+DEEPGRAM_API_KEY=
+CARTESIA_API_KEY=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+NGROK_AUTH_TOKEN=
+```
+
+### run a test:
+
+make sure to replace `TWILIO_PHONE_NUMBER` and `PHONE_NUMBER_TO_CALL` with your own numbers.
+
+if you have a paid ngrok plan, be sure to add your ngrok domain to the `listener` variable.
 
 ```python
 from fixa import Test, Agent, Scenario, Evaluation, TestRunner
@@ -42,8 +57,8 @@ import ngrok, os, asyncio
 
 load_dotenv(override=True)
 
-TWILIO_PHONE_NUMBER = "+15554443333" # the twilio phone number to initiate calls from
-PHONE_NUMBER_TO_CALL = "+15554443333" # the phone number to call
+TWILIO_PHONE_NUMBER = "+15554443333" # the twilio phone number to initiate calls from (must be a number you own)
+PHONE_NUMBER_TO_CALL = "+15554443333" # the phone number of your agent
 
 async def main():
     # define test agent to call your voice agent
@@ -92,16 +107,7 @@ if __name__ == "__main__":
 
 ```
 
-make sure to add the following api keys to your `.env` file:
-
-```bash
-OPENAI_API_KEY=
-DEEPGRAM_API_KEY=
-CARTESIA_API_KEY=
-TWILIO_ACCOUNT_SID=
-TWILIO_AUTH_TOKEN=
-NGROK_AUTH_TOKEN=
-```
+### view the results
 
 example output in the console:
 
