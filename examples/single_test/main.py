@@ -5,6 +5,9 @@ import ngrok, os, asyncio
 
 load_dotenv(override=True)
 
+TWILIO_PHONE_NUMBER = "+15554443333" # the twilio phone number to initiate calls from
+PHONE_NUMBER_TO_CALL = "+15554443333" # the phone number to call
+
 async def main():
     # define test agent to call your voice agent
     agent = Agent(
@@ -32,7 +35,7 @@ async def main():
     test_runner = TestRunner(
         port=port,
         ngrok_url=listener.url(),
-        twilio_phone_number="+15554443333", # the twilio phone number to initiate calls from
+        twilio_phone_number=TWILIO_PHONE_NUMBER, 
         evaluator=LocalEvaluator(),
     )
 
@@ -42,8 +45,8 @@ async def main():
 
     # run the tests!
     test_results = await test_runner.run_tests(
+        phone_number=PHONE_NUMBER_TO_CALL,
         type=TestRunner.OUTBOUND,
-        phone_number="+15554443333", # the phone number to call
     )
     # print(test_results)
 

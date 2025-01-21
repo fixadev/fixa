@@ -7,6 +7,9 @@ import asyncio
 
 load_dotenv(override=True)
 
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER") or ""
+PHONE_NUMBER_TO_CALL = os.getenv("TEST_PHONE_NUMBER") or ""
+
 async def test_complex():
     agents = [
         Agent(
@@ -56,7 +59,7 @@ async def test_complex():
     test_runner = TestRunner(
         port=port,
         ngrok_url=listener.url(),
-        twilio_phone_number=os.getenv("TWILIO_PHONE_NUMBER") or "",
+        twilio_phone_number=TWILIO_PHONE_NUMBER,
         # evaluator=CloudEvaluator(api_key=os.getenv("FIXA_API_KEY") or ""),
         evaluator=LocalEvaluator(),
     )
@@ -66,7 +69,10 @@ async def test_complex():
             test = Test(scenario=scenario, agent=agent)
             test_runner.add_test(test)
 
-    test_results = await test_runner.run_tests(type=TestRunner.OUTBOUND, phone_number=os.getenv("TEST_PHONE_NUMBER") or "")
+    test_results = await test_runner.run_tests(
+        phone_number=PHONE_NUMBER_TO_CALL,
+        type=TestRunner.OUTBOUND,
+    )
     # print(test_results)
 
 if __name__ == "__main__":

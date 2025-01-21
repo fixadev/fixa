@@ -67,12 +67,12 @@ class TestRunner:
         """
         self.tests.append(test)
 
-    async def run_tests(self, type: str, phone_number: str) -> List[TestResult]:
+    async def run_tests(self, phone_number: str, type: str=OUTBOUND) -> List[TestResult]:
         """
         Runs all the tests that were added to the test runner.
         Args:
-            type: The type of test to run. Can be TestRunner.INBOUND or TestRunner.OUTBOUND.
             phone_number: The phone number to call (for outbound tests).
+            type (optional): The type of test to run. Can be TestRunner.INBOUND or TestRunner.OUTBOUND.
         """
         await self._start_server()
 
@@ -133,7 +133,7 @@ class TestRunner:
                         break
                 if all_completed:
                     all_completed_iterations += 1
-                    print(f"All calls are completed for {all_completed_iterations} iterations")
+                    print(f"All calls complete! Waiting for evaluations to finish...{all_completed_iterations} second{all_completed_iterations != 1 and 's' or ''} (60s timeout)")
                 else:
                     all_completed_iterations = 0
 
