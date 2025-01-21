@@ -21,7 +21,7 @@ under the hood, this package uses:
 - OpenAI for the evaluator
 - Twilio to initiate calls
 
-(new integrations coming soon)
+(other integrations coming soon)
 
 # quick start
 
