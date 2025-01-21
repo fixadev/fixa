@@ -65,7 +65,9 @@ async def main():
 
     # start an ngrok server so twilio can access your local websocket endpoint
     port = 8765
+    # uncomment the line below if you have a paid ngrok plan (need to specify a domain)
     listener = await ngrok.forward(port, authtoken=os.getenv("NGROK_AUTH_TOKEN")) # type: ignore (needed or else python will complain)
+    # listener = await ngrok.forward(port, authtoken=os.getenv("NGROK_AUTH_TOKEN"), domain="your_domain.ngrok.dev") # type: ignore (needed or else python will complain)
 
     # initialize a test runner
     test_runner = TestRunner(
