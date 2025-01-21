@@ -1,4 +1,4 @@
-# single test
+# cloud evaluator
 
 this example shows how to run a simple test with the `CloudEvaluator`
 
