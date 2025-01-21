@@ -51,11 +51,11 @@ jobs:
     environment:
       name: pypi
       # OPTIONAL: uncomment and update to include your PyPI project URL in the deployment status:
-      url: https://pypi.org/p/fixa-dev
+      # url: https://pypi.org/p/fixa-dev
       #
       # ALTERNATIVE: if your GitHub Release name is the PyPI project version string
       # ALTERNATIVE: exactly, uncomment the following line instead:
-      # url: https://pypi.org/project/fixa-dev/${{ github.event.release.name }}
+      url: https://pypi.org/project/fixa-dev/${{ github.event.release.name }}
 
     steps:
       - name: Retrieve release distributions
