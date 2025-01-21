@@ -204,4 +204,4 @@ test_runner = TestRunner(
 
 fixa observe comes with an audio player, a transcript, and pinpoints where the evaluations failed. it also analyzes latency and interruptions.
 
-[insert picture of fixa observe]
+![fixa observe](./.github/assets/fixa-observe.png)
