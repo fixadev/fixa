@@ -23,6 +23,10 @@ under the hood, this package uses:
 
 (other integrations coming soon)
 
+# demo
+
+[![demo video](http://markdown-videos-api.jorgenkh.no/youtube/LAW1wW6SjTo)](https://www.youtube.com/watch?v=LAW1wW6SjTo)
+
 # quick start
 
 installation:
