@@ -32,3 +32,7 @@ dependencies = [
 Homepage = "https://fixa.dev"
 Repository = "https://github.com/fixadev/fixa"
 Issues = "https://github.com/fixadev/fixa/issues"
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
+fallback_version = "0.0.0-dev"
