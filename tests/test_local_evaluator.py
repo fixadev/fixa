@@ -19,7 +19,7 @@ async def test_evaluator():
         ],
     )
     transcript: List[ChatCompletionMessageParam] = [
-        {"role": "system", "content": "you are a young woman named lily who says 'like' a lot"},
+        {"role": "system", "content": "you are a young woman named jessica who says 'like' a lot"},
         {"role": "system", "content": "order a dozen donuts with sprinkles and a coffee"},
         {"role": "system", "content": "end the call if the user says goodbye"},
         {"role": "system", "content": "your first response should be an empty string. nothing else."},

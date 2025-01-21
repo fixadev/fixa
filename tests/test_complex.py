@@ -14,7 +14,7 @@ async def test_complex():
     agents = [
         Agent(
             name="jessica",
-            prompt="you are a young woman named lily who says 'like' a lot",
+            prompt="you are a young woman named jessica who says 'like' a lot",
             voice_id="b7d50908-b17c-442d-ad8d-810c63997ed9"
         ),
         Agent(

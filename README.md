@@ -49,7 +49,7 @@ async def main():
     # define test agent to call your voice agent
     agent = Agent(
         name="jessica",
-        prompt="you are a young woman named lily who says 'like' a lot",
+        prompt="you are a young woman named jessica who says 'like' a lot",
     )
 
     # define a scenario to test
@@ -130,7 +130,7 @@ agents are the voice agents that will call your voice agent. give each agent a p
 ```python
 agent = Agent(
     name="jessica",
-    prompt="you are a young woman named lily who says 'like' a lot",
+    prompt="you are a young woman named jessica who says 'like' a lot",
 )
 ```
 
