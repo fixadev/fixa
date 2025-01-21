@@ -28,7 +28,8 @@ jobs:
 
       - name: Build release distributions
         run: |
-          # NOTE: put your own distribution build steps here.
+          # Update version from the GitHub release tag
+          echo "VERSION = '${GITHUB_REF#refs/tags/}'" > fixa_dev/_version.py
           python -m pip install build
           python -m build
 
