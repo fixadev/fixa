@@ -1,12 +1,6 @@
 from abc import ABC, abstractmethod
-import os
-import uuid
-import requests
-from enum import Enum
-from typing import List, Optional
-from dataclasses import dataclass
-from openai import OpenAI
-from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
+from typing import Any, Dict, List, Optional
+from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
 
 from fixa.scenario import Scenario
@@ -16,7 +10,11 @@ class EvaluationResult(BaseModel):
     passed: bool
     reason: str
 
+class EvaluationResponse(BaseModel):
+    evaluation_results: List[EvaluationResult]
+    extra_data: Dict[str, Any]
+
 class BaseEvaluator(ABC):
     @abstractmethod
-    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
+    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[EvaluationResponse]:
         raise NotImplementedError

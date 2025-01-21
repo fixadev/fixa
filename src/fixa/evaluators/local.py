@@ -3,7 +3,7 @@ from typing import List, Optional
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletionMessageParam
 from pydantic import BaseModel
-from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
+from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResponse, EvaluationResult
 from fixa.scenario import Scenario
 from dotenv import load_dotenv
 
@@ -18,7 +18,7 @@ class LocalEvaluator(BaseEvaluator):
         self.client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY") or "")
         self.model = model
     
-    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[List[EvaluationResult]]:
+    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[EvaluationResponse]:
         """Evaluate a call locally.
         Args:
             scenario (Scenario): Scenario to evaluate
@@ -43,4 +43,7 @@ class LocalEvaluator(BaseEvaluator):
         parsed = response.choices[0].message.parsed
         if parsed is None:
             return None
-        return parsed.results
+        return EvaluationResponse(
+            evaluation_results=parsed.results,
+            extra_data={}
+        )

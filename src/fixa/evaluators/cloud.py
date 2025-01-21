@@ -1,8 +1,8 @@
 import asyncio
 import uuid
-from typing import List
+from typing import List, Optional
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
-from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResult
+from fixa.evaluators.evaluator import BaseEvaluator, EvaluationResponse, EvaluationResult
 from fixa.scenario import Scenario
 import aiohttp
 import json
@@ -15,7 +15,7 @@ class CloudEvaluator(BaseEvaluator):
         if not api_key:
             raise ValueError("fixa-observe API key required for cloud evaluator")
     
-    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> List[EvaluationResult]:
+    async def evaluate(self, scenario: Scenario, transcript: List[ChatCompletionMessageParam], stereo_recording_url: str) -> Optional[EvaluationResponse]:
         """Evaluate a call using fixa-observe.
         Args:
             scenario (Scenario): Scenario to evaluate
@@ -56,10 +56,16 @@ class CloudEvaluator(BaseEvaluator):
                     if response.status == 200:
                         results = await response.json()
                         evaluation_results = results["call"]["evaluationResults"]
-                        return [EvaluationResult(name=r["evaluation"]["evaluationTemplate"]["name"], passed=r["success"], reason=r["details"]) for r in evaluation_results]
+                        return EvaluationResponse(
+                            evaluation_results=[EvaluationResult(name=r["evaluation"]["evaluationTemplate"]["name"], passed=r["success"], reason=r["details"]) for r in evaluation_results],
+                            extra_data={
+                               "fixa_observe_call_url": f"https://www.fixa.dev/observe/calls/{call_id}"
+                            }
+                        )
                     
                     # Wait a bit before polling again
                     await asyncio.sleep(2)
                     retries += 1
 
+        # failed to get call results!
         raise Exception("Failed to get call results")

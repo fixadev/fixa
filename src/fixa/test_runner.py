@@ -14,6 +14,7 @@ from openai.types.chat import ChatCompletionMessageParam
 
 from fixa import Scenario, Test
 from fixa.evaluators import BaseEvaluator, EvaluationResult
+from fixa.evaluators.evaluator import EvaluationResponse
 from fixa.test_server import CallStatus, app, set_args, set_twilio_client
 
 load_dotenv(override=True)
@@ -23,7 +24,7 @@ class TestResult():
     """
     Result of a test.
     """
-    def __init__(self, test: Test, evaluation_results: List[EvaluationResult], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str, error: str | None = None):
+    def __init__(self, test: Test, evaluation_results: Optional[EvaluationResponse], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str, error: str | None = None):
         self.test = test
         self.evaluation_results = evaluation_results
         self.transcript = transcript
@@ -59,7 +60,7 @@ class TestRunner:
         self._twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
         self._status: Dict[str, CallStatus] = {}
         self._call_id_to_test: Dict[str, Test] = {}
-        self._evaluation_results: Dict[str, List[EvaluationResult]] = {}
+        self._evaluation_results: Dict[str, EvaluationResponse] = {}
 
     def add_test(self, test: Test):
         """
@@ -163,7 +164,9 @@ class TestRunner:
                 print(f"\n🎯 {test.scenario.name} ({test.agent.name})")
                 print(f"🔊 Recording URL: {recording_url}")
                 if call_id in self._evaluation_results:
-                    for result in self._evaluation_results[call_id]:
+                    if 'fixa_observe_call_url' in self._evaluation_results[call_id].extra_data:
+                        print(f"🔗 fixa-observe call analysis: {self._evaluation_results[call_id].extra_data['fixa_observe_call_url']}")
+                    for result in self._evaluation_results[call_id].evaluation_results:
                         status = "✅" if result.passed else "❌"
                         print(f"-- {status} {result.name}: {result.reason}")
         print("\n" + "=" * 50)
@@ -175,7 +178,7 @@ class TestRunner:
                 test_results.append(
                     TestResult(
                         test=test,
-                        evaluation_results=[],
+                        evaluation_results=None,
                         transcript=[],
                         stereo_recording_url="",
                         error=status["error"]
@@ -185,7 +188,7 @@ class TestRunner:
                 test_results.append(
                     TestResult(
                         test=test, 
-                        evaluation_results=self._evaluation_results.get(call_id, []),
+                        evaluation_results=self._evaluation_results.get(call_id),
                         transcript=status["transcript"] or [], 
                         stereo_recording_url=status["stereo_recording_url"] or "",
                         error=None
@@ -193,7 +196,7 @@ class TestRunner:
                 )
         return test_results
 
-    async def _evaluate_call(self, call_id: str) -> Optional[List[EvaluationResult]]:
+    async def _evaluate_call(self, call_id: str) -> Optional[EvaluationResponse]:
         """
         Evaluates a call.
         """
@@ -207,10 +210,17 @@ class TestRunner:
         ):
             return
 
-        evaluation_results = await self.evaluator.evaluate(test.scenario, call_status["transcript"], call_status["stereo_recording_url"])
-        if evaluation_results is not None:
-            self._evaluation_results[call_id] = evaluation_results
-        return evaluation_results
+        try:
+            print(f"Evaluating call {call_id}...")
+            evaluation_results = await self.evaluator.evaluate(test.scenario, call_status["transcript"], call_status["stereo_recording_url"])
+            print(f"Evaluated call {call_id}!")
+            if evaluation_results is not None:
+                self._evaluation_results[call_id] = evaluation_results
+                return evaluation_results
+        except Exception as e:
+            print(f"❌ Failed to evaluate call {call_id}: {str(e)}")
+
+        return None
 
     async def _start_server(self):
         """
