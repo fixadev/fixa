@@ -9,7 +9,7 @@
 
 # overview
 
-fixa is a package for testing and evaluating AI voice agents.
+fixa is a python package for testing and evaluating AI voice agents.
 
 it uses a voice agent to call your voice agent and an LLM to evaluate how the conversation went.
 
