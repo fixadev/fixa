@@ -1,19 +1,15 @@
-import subprocess
 from typing import Dict, List, Optional
-from pydantic import BaseModel
-import requests
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 import asyncio
 import sys
-from datetime import datetime
 import aiohttp
 import uvicorn
 from openai.types.chat import ChatCompletionMessageParam
 from dataclasses import dataclass
-from fixa import Scenario, Test
-from fixa.evaluators import BaseEvaluator, EvaluationResult
+from fixa import Test
+from fixa.evaluators import BaseEvaluator
 from fixa.evaluators.evaluator import EvaluationResponse
 from fixa.test_server import CallStatus, app, set_args, set_twilio_client
 
