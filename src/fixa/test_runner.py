@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from fixa import Test
 from fixa.evaluators import BaseEvaluator
 from fixa.evaluators.evaluator import EvaluationResponse
+from fixa.telemetry.service import ProductTelemetry
+from fixa.telemetry.views import RunTestTelemetryEvent
 from fixa.test_server import CallStatus, app, set_args, set_twilio_client
 
 load_dotenv(override=True)
@@ -60,6 +62,7 @@ class TestRunner:
         self.tests: list[Test] = []
 
         self._twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+        self._telemetry = ProductTelemetry()
         self._status: Dict[str, CallStatus] = {}
         self._call_id_to_test: Dict[str, Test] = {}
         self._evaluation_results: Dict[str, EvaluationResponse] = {}
@@ -83,6 +86,7 @@ class TestRunner:
         print("\n🔄 Running Tests:\n")
         for i, test in enumerate(self.tests, 1):
             print(f"{i}. {test.scenario.name} ⏳ Pending...")
+            self._telemetry.capture(RunTestTelemetryEvent(test=test))
 
         async with asyncio.TaskGroup() as tg, aiohttp.ClientSession() as session:
             for i, test in enumerate(self.tests, 1):
