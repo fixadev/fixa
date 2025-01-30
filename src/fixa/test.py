@@ -1,16 +1,15 @@
+from dataclasses import dataclass
+
 from .agent import Agent
 from .scenario import Scenario
 
+@dataclass
 class Test:
-    def __init__(self, scenario: Scenario, agent: Agent):
-        """Initialize a Test.
-        
-        Args:
-            scenario (Scenario): The scenario to test
-            agent (Agent): The agent to test with
-        """
-        self.scenario = scenario
-        self.agent = agent
+    """A test represents a scenario and an agent to test the scenario with
 
-    def __repr__(self):
-        return f"Test(scenario={self.scenario}, agent={self.agent})"
+    Attributes:
+        scenario (Scenario): The scenario to test
+        agent (Agent): The agent to test with
+    """
+    scenario: Scenario
+    agent: Agent

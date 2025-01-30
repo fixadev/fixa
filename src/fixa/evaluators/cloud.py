@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import asdict
 import uuid
 from typing import List, Optional
 from openai.types.chat import ChatCompletionMessageParam, ChatCompletionToolParam
@@ -30,7 +31,7 @@ class CloudEvaluator(BaseEvaluator):
                 json={
                     "callId": str(uuid.uuid4()),
                     "agentId": "test",
-                    "scenario": scenario.to_dict(),
+                    "scenario": asdict(scenario),
                     "transcript": transcript,
                     "stereoRecordingUrl": stereo_recording_url,
                 },

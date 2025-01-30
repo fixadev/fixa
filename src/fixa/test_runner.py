@@ -1,40 +1,44 @@
-import subprocess
 from typing import Dict, List, Optional
-from pydantic import BaseModel
-import requests
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
 import asyncio
 import sys
-from datetime import datetime
 import aiohttp
 import uvicorn
 from openai.types.chat import ChatCompletionMessageParam
-
-from fixa import Scenario, Test
-from fixa.evaluators import BaseEvaluator, EvaluationResult
+from dataclasses import dataclass
+from fixa import Test
+from fixa.evaluators import BaseEvaluator
 from fixa.evaluators.evaluator import EvaluationResponse
+from fixa.telemetry.service import ProductTelemetry
+from fixa.telemetry.views import RunTestTelemetryEvent
 from fixa.test_server import CallStatus, app, set_args, set_twilio_client
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
 
+@dataclass
 class TestResult():
-    """
-    Result of a test.
-    """
-    def __init__(self, test: Test, evaluation_results: Optional[EvaluationResponse], transcript: List[ChatCompletionMessageParam], stereo_recording_url: str, error: str | None = None):
-        self.test = test
-        self.evaluation_results = evaluation_results
-        self.transcript = transcript
-        self.stereo_recording_url = stereo_recording_url
-        self.error = error
+    """Result of a test.
 
-    def __repr__(self):
-        return f"TestResult(test={self.test}, evaluation_results={self.evaluation_results}, transcript={self.transcript}, stereo_recording_url='{self.stereo_recording_url}', error={self.error})"
+    Attributes:
+        test (Test): The test that was run
+        evaluation_results (Optional[EvaluationResponse]): The evaluation results of the test
+        transcript (List[ChatCompletionMessageParam]): The transcript of the test
+        stereo_recording_url (str): The URL of the stereo recording of the test
+        error (str | None): The error that occurred during the test
+    """
+    test: Test
+    evaluation_results: Optional[EvaluationResponse]
+    transcript: List[ChatCompletionMessageParam]
+    stereo_recording_url: str
+    error: str | None = None
 
 class TestRunner:
+    """
+    A TestRunner is responsible for running tests.
+    """
     INBOUND = "inbound"
     OUTBOUND = "outbound"
 
@@ -58,6 +62,7 @@ class TestRunner:
         self.tests: list[Test] = []
 
         self._twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
+        self._telemetry = ProductTelemetry()
         self._status: Dict[str, CallStatus] = {}
         self._call_id_to_test: Dict[str, Test] = {}
         self._evaluation_results: Dict[str, EvaluationResponse] = {}
@@ -81,6 +86,7 @@ class TestRunner:
         print("\n🔄 Running Tests:\n")
         for i, test in enumerate(self.tests, 1):
             print(f"{i}. {test.scenario.name} ⏳ Pending...")
+            self._telemetry.capture(RunTestTelemetryEvent(test=test))
 
         async with asyncio.TaskGroup() as tg, aiohttp.ClientSession() as session:
             for i, test in enumerate(self.tests, 1):
