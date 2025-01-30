@@ -211,8 +211,8 @@ test_runner = TestRunner(
 )
 ```
 
-[see a full example here](./examples/cloud_evaluator)
+[see a full example here](https://github.com/fixadev/fixa/tree/main/examples/cloud_evaluator)
 
 fixa observe comes with an audio player, a transcript, and pinpoints where the evaluations failed. it also analyzes latency and interruptions.
 
-![fixa observe](./.github/assets/fixa-observe.png)
+![fixa observe](https://raw.githubusercontent.com/fixadev/fixa/main/.github/assets/fixa-observe.png)
