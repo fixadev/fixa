@@ -43,5 +43,7 @@ async def main():
         type=TestRunner.OUTBOUND,
     )
 
+    print("test_results", test_results)
+
 if __name__ == "__main__":
     asyncio.run(main())

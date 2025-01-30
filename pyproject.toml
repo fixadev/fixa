@@ -18,7 +18,8 @@ classifiers = [
 ]
 license = { text = "BSD 2-Clause License" }
 dependencies = [
-    "pipecat-ai[cartesia,openai,silero,deepgram]",
+    "pipecat-ai[cartesia,openai,silero,deepgram]==0.0.53",
+    "posthog==3.11.0",
     "fastapi~=0.115.6",
     "uvicorn~=0.34.0",
     "python-dotenv~=1.0.1",
