@@ -1,9 +1,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fixa.test import Test
+from fixa.test_runner.views import TestResult
 
 @dataclass
 class BaseTelemetryEvent(ABC):
@@ -20,3 +21,8 @@ class BaseTelemetryEvent(ABC):
 class RunTestTelemetryEvent(BaseTelemetryEvent):
     test: Test
     name: str = 'run_test'
+
+@dataclass
+class TestResultsTelemetryEvent(BaseTelemetryEvent):
+    test_results: List[TestResult]
+    name: str = 'test_results'

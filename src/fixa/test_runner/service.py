@@ -6,34 +6,16 @@ import asyncio
 import sys
 import aiohttp
 import uvicorn
-from openai.types.chat import ChatCompletionMessageParam
-from dataclasses import dataclass
 from fixa import Test
 from fixa.evaluators import BaseEvaluator
 from fixa.evaluators.evaluator import EvaluationResponse
 from fixa.telemetry.service import ProductTelemetry
-from fixa.telemetry.views import RunTestTelemetryEvent
-from fixa.test_server import CallStatus, app, set_args, set_twilio_client
+from fixa.telemetry.views import RunTestTelemetryEvent, TestResultsTelemetryEvent
+from fixa.test_runner.server import CallStatus, app, set_args, set_twilio_client
+from fixa.test_runner.views import TestResult
 
 load_dotenv(override=True)
 REQUIRED_ENV_VARS = ["OPENAI_API_KEY", "DEEPGRAM_API_KEY", "CARTESIA_API_KEY", "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN", "NGROK_AUTH_TOKEN"]
-
-@dataclass
-class TestResult():
-    """Result of a test.
-
-    Attributes:
-        test (Test): The test that was run
-        evaluation_results (Optional[EvaluationResponse]): The evaluation results of the test
-        transcript (List[ChatCompletionMessageParam]): The transcript of the test
-        stereo_recording_url (str): The URL of the stereo recording of the test
-        error (str | None): The error that occurred during the test
-    """
-    test: Test
-    evaluation_results: Optional[EvaluationResponse]
-    transcript: List[ChatCompletionMessageParam]
-    stereo_recording_url: str
-    error: str | None = None
 
 class TestRunner:
     """
@@ -200,6 +182,7 @@ class TestRunner:
                         error=None
                     )
                 )
+        self._telemetry.capture(TestResultsTelemetryEvent(test_results=test_results))
         return test_results
 
     async def _evaluate_call(self, call_id: str) -> Optional[EvaluationResponse]:
