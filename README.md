@@ -100,6 +100,8 @@ async def main():
     test_results = await test_runner.run_tests(
         phone_number=PHONE_NUMBER_TO_CALL,
         type=TestRunner.OUTBOUND,
+        timeout=300,  # optional: timeout in seconds (default: 300)
+        max_tokens=2000,  # optional: max tokens for LLM responses (default: 2000)
     )
 
 if __name__ == "__main__":
@@ -182,7 +184,7 @@ test_results = await test_runner.run_tests(
 )
 ```
 
-when tests are run, all the test calls are made simultaneously to the phone number provided, with the voice agent executing the prompt instructions specified in the scenario.
+when tests are run, all the test calls are made simultaneously to the phone number provided, with the voice agent executing the prompt instructions specified in the scenario. Each call has a configurable timeout (default: 5 minutes) and token limit (default: 2000) to prevent endless conversations and handle longer interactions effectively. If a call exceeds the timeout, it will be gracefully terminated and partial results will be saved.
 
 ### 4. get results
 

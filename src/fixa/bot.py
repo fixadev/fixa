@@ -30,13 +30,15 @@ logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
 class Bot:
-    def __init__(self, websocket_client, stream_sid, call_sid):
+    def __init__(self, websocket_client, stream_sid, call_sid, timeout=300, max_tokens=2000):
         self.websocket_client = websocket_client
         self.stream_sid = stream_sid
         self.call_sid = call_sid
         self.twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
         self.task = None
         self.transport = None
+        self.timeout = timeout
+        self.max_tokens = max_tokens
 
     def get_end_call_twiml(self):
         return "<Response><Hangup/></Response>"
@@ -71,7 +73,11 @@ class Bot:
             ),
         )
 
-        llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY") or "", model="gpt-4o")
+        llm = OpenAILLMService(
+            api_key=os.getenv("OPENAI_API_KEY") or "",
+            model="gpt-4o",
+            max_tokens=self.max_tokens
+        )
         llm.register_function("end_call", self.end_call)
 
         tools = [
@@ -130,11 +136,17 @@ class Bot:
 
         return self.messages
 
-async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid):
-    bot = Bot(websocket_client, stream_sid, call_sid)
+async def run_bot(agent: Agent, scenario: Scenario, websocket_client, stream_sid, call_sid, timeout=300, max_tokens=2000):
+    bot = Bot(websocket_client, stream_sid, call_sid, timeout, max_tokens)
     try:
-        transcript = await bot.run(agent, scenario)
+        # Use asyncio.wait_for to implement timeout
+        transcript = await asyncio.wait_for(bot.run(agent, scenario), timeout=bot.timeout)
         return transcript
+    except asyncio.TimeoutError:
+        print(f"Call exceeded timeout of {bot.timeout} seconds. Ending call and saving results.")
+        # End call gracefully and save partial results
+        await bot.end_call(None, None, None, bot.task._pipeline.processors[3], None, None)
+        return bot.messages
     except asyncio.CancelledError:
-        # print("Bot run cancelled")
-        return None
+        print("Bot run cancelled")
+        return bot.messages if hasattr(bot, 'messages') else None
